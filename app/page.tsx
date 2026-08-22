@@ -32,8 +32,12 @@ export default async function Home() {
     <main className="mx-auto max-w-2xl p-8">
       <h1 className="text-2xl font-bold">Proyecto MDW 2026</h1>
       <p className="mt-2 text-sm opacity-70">
-        Equipo: completar en el README y acá.
+        Equipo:
       </p>
+      <ul className="mt-3 list-disc space-y-1 pl-5 text-sm opacity-80">
+        <li>Carlos Gustavo Perez</li>
+        <li>Leandro Jonatan Montenegro</li>
+      </ul>
 
       {notas === null ? (
         <section className="mt-8 rounded-lg border border-dashed p-6">

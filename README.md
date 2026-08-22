@@ -1,30 +1,29 @@
-# Proyecto MDW 2026 — <NOMBRE DEL SISTEMA>
+# Proyecto MDW 2026 — Almacén POS — Sistema de Punto de Venta y Cuentas Corrientes
 
-> Reemplazá este bloque en la clase 1.
+> Sistema web de gestión comercial e inventario indexado por unidades para comercios de barrio.
 
 **Equipo:**
 
-- Nombre Apellido — responsable del repositorio (creó el repo y tiene la cuenta de Vercel)
-- Nombre Apellido
-- Nombre Apellido
-- Nombre Apellido
+- Carlos Gustavo Perez — responsable del repositorio (creó el repo y tiene la cuenta de Vercel)
+- Leandro Jonatan Montenegro
 
-**Producción:** https://<tu-proyecto>.vercel.app
-**Problema que resuelve:** una oración.
-**Flujo principal:** una oración.
+
+**Producción:** https://almacen-pos.vercel.app  
+**Problema que resuelve:** Los comercios de barrio pierden capital por la inflación al fiar en pesos o registrar ventas en cuadernos sin control de inventario.  
+**Flujo principal:** El vendedor escanea productos en caja, realiza la venta fiada registrando unidades de producto y posteriormente procesa entregas de dinero cancelando ítems en orden cronológico (FIFO) al precio del día.
 
 ---
 
 ## Puesta en marcha
 
-Requisitos: Node 20+, npm, y una base de datos: **Postgres** (Supabase) o **MongoDB** (Atlas). Las dos tienen plan gratuito.
+Requisitos: Node 20+, npm, y una base de datos: **Postgres** (Supabase).
 
 ```bash
 npm install
 cp .env.example .env.local     # completar DATABASE_URL y AUTH_SECRET
 npx prisma migrate dev --name init
 npm run db:seed
-npm run dev                       # http://localhost:3000
+npm run dev                    # http://localhost:3000
 ```
 
 Generar el `AUTH_SECRET`:
@@ -52,14 +51,14 @@ npx auth secret
 
 ```
 app/                    rutas (App Router)
-  (public)/             páginas sin sesión
-  (app)/                páginas con sesión
+  (public)/             páginas sin sesión (login)
+  (app)/                páginas con sesión (POS, cuentas corrientes, productos)
   api/                  Route Handlers
 components/             componentes de UI
 lib/
   db/                   acceso a datos — ÚNICO lugar que habla con Prisma
   schemas/              schemas de Zod (validación + tipos)
-  auth.ts               configuración de sesión y roles
+  auth.ts               configuración de sesión y roles (Administrador / Vendedor)
 prisma/
   schema.prisma         modelo de datos
   seed.ts               datos de ejemplo
