@@ -1,61 +1,111 @@
-// Modelo de datos del proyecto.
-//
-// Lo que hay acá abajo es un EJEMPLO MÍNIMO para que el proyecto arranque.
-// En la clase 3 lo reemplazan por el modelo de su propio dominio.
-//
-// Después de cualquier cambio en este archivo:
-//   npx prisma migrate dev --name <descripcion-del-cambio>
-
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "postgresql"
-
-  // Vercel es serverless, así que hacen falta dos conexiones distintas:
-  //   DATABASE_URL → el pooler, que la app usa en cada request
-  //   DIRECT_URL   → la conexión directa, que usan las migraciones
-  // Con una sola funciona en clase y se cae en producción por agotar
-  // las conexiones de Postgres.
+  provider  = "postgresql"
   url       = env("DATABASE_URL")
   directUrl = env("DIRECT_URL")
 }
 
-// ¿El equipo eligió MongoDB? Se cambia el provider a "mongodb", se usa una
-// connection string de MongoDB Atlas y se sincroniza con `prisma db push`
-// en lugar de `prisma migrate dev`. El resto del proyecto no cambia.
-// Ojo: con Mongo los ids llevan @map("_id") @db.ObjectId y la integridad
-// referencial la garantiza el código, no la base.
-
-enum Rol {
-  ADMIN
-  USUARIO
+model categoria {
+  id       BigInt     @id(map: "pk_categoria")
+  nombre   String     @unique(map: "uq_categoria_nombre") @db.VarChar(100)
+  activa   Boolean    @default(true)
+  producto producto[]
 }
 
-model Usuario {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  nombre    String
-  rol       Rol      @default(USUARIO)
-  creadoEn  DateTime @default(now())
-
-  notas     Nota[]
+model cliente {
+  id              BigInt           @id(map: "pk_cliente")
+  nombre          String           @db.VarChar(150)
+  documento       String?          @unique(map: "uq_cliente_documento") @db.VarChar(30)
+  telefono        String?          @db.VarChar(50)
+  activo          Boolean          @default(true)
+  cuentacorriente cuentacorriente?
+  venta           venta[]
 }
 
-// Entidad de ejemplo: bórrenla en la clase 3.
-// Muestra el patrón de una relación 1-N con su índice.
-model Nota {
-  id            String   @id @default(cuid())
-  titulo        String
-  contenido     String
-  creadaEn      DateTime @default(now())
-  actualizadaEn DateTime @updatedAt
+model cuentacorriente {
+  id                        BigInt                      @id(map: "pk_cuentacorriente")
+  clienteid                 BigInt                      @unique(map: "uq_cuentacorriente_cliente")
+  cliente                   cliente                     @relation(fields: [clienteid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_cuentacorriente_cliente")
+  cuentacorrientemovimiento cuentacorrientemovimiento[]
+}
 
-  autor         Usuario  @relation(fields: [autorId], references: [id], onDelete: Cascade)
-  autorId       String
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model cuentacorrientemovimiento {
+  id                BigInt          @id(map: "pk_cuentacorrientemovimiento")
+  cuentacorrienteid BigInt
+  ventaid           BigInt?
+  productoid        BigInt?
+  fecha             DateTime        @default(now()) @db.Timestamp(6)
+  tipo              Int
+  cantidad          Decimal?        @db.Decimal(12, 3)
+  importe           Decimal         @db.Decimal(12, 2)
+  cuentacorriente   cuentacorriente @relation(fields: [cuentacorrienteid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_ccm_cuentacorriente")
+  producto          producto?       @relation(fields: [productoid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_ccm_producto")
+  venta             venta?          @relation(fields: [ventaid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_ccm_venta")
 
-  // Índice sobre la foreign key: sin esto, listar las notas de un usuario
-  // obliga a Postgres a recorrer la tabla entera.
-  @@index([autorId])
+  @@index([cuentacorrienteid], map: "ix_ccm_cuentacorrienteid")
+  @@index([fecha], map: "ix_ccm_fecha")
+  @@index([productoid], map: "ix_ccm_productoid")
+  @@index([ventaid], map: "ix_ccm_ventaid")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model detalleventa {
+  id             BigInt   @id(map: "pk_detalleventa")
+  ventaid        BigInt
+  productoid     BigInt
+  cantidad       Decimal  @db.Decimal(12, 3)
+  preciounitario Decimal  @db.Decimal(12, 2)
+  subtotal       Decimal  @db.Decimal(12, 2)
+  producto       producto @relation(fields: [productoid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_detalleventa_producto")
+  venta          venta    @relation(fields: [ventaid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_detalleventa_venta")
+
+  @@index([productoid], map: "ix_detalleventa_productoid")
+  @@index([ventaid], map: "ix_detalleventa_ventaid")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model producto {
+  id                        BigInt                      @id(map: "pk_producto")
+  categoriaid               BigInt
+  nombre                    String                      @db.VarChar(150)
+  codigobarra               String?                     @unique(map: "uq_producto_codigobarra") @db.VarChar(50)
+  preciolista               Decimal                     @default(0) @db.Decimal(12, 2)
+  permitestock              Boolean                     @default(true)
+  stockactual               Decimal                     @default(0) @db.Decimal(12, 3)
+  activo                    Boolean                     @default(true)
+  cuentacorrientemovimiento cuentacorrientemovimiento[]
+  detalleventa              detalleventa[]
+  categoria                 categoria                   @relation(fields: [categoriaid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_producto_categoria")
+
+  @@index([categoriaid], map: "ix_producto_categoriaid")
+}
+
+model usuario {
+  id      BigInt  @id(map: "pk_usuario")
+  nombre  String  @db.VarChar(150)
+  usuario String  @unique(map: "uq_usuario_usuario") @db.VarChar(100)
+  activo  Boolean @default(true)
+  venta   venta[]
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model venta {
+  id                        BigInt                      @id(map: "pk_venta")
+  fecha                     DateTime                    @default(now()) @db.Timestamp(6)
+  clienteid                 BigInt?
+  usuarioid                 BigInt
+  tipopago                  Int
+  total                     Decimal                     @default(0) @db.Decimal(12, 2)
+  cuentacorrientemovimiento cuentacorrientemovimiento[]
+  detalleventa              detalleventa[]
+  cliente                   cliente?                    @relation(fields: [clienteid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_venta_cliente")
+  usuario                   usuario                     @relation(fields: [usuarioid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_venta_usuario")
+
+  @@index([clienteid], map: "ix_venta_clienteid")
+  @@index([fecha], map: "ix_venta_fecha")
+  @@index([usuarioid], map: "ix_venta_usuarioid")
 }
