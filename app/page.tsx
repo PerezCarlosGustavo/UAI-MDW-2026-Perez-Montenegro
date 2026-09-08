@@ -7,7 +7,8 @@
  *
  * En la clase 1 se reemplaza por la portada del proyecto del equipo.
  */
-import { listarNotas } from "@/lib/db/notas";
+
+import { listarProductos } from "@/lib/productos";
 
 // Esta página lee datos que cambian, así que se renderiza en cada request.
 // Sin esta línea, Next.js intentaría generarla una sola vez durante el build
@@ -20,12 +21,12 @@ export default async function Home() {
   // En vez de reventar con un error de Prisma en la cara, se muestra qué falta.
   // Es el mismo criterio que van a aplicar en todo el sistema: un error
   // esperable no se propaga al usuario, se comunica.
-  let notas: Awaited<ReturnType<typeof listarNotas>> | null = null;
+  let productos: Awaited<ReturnType<typeof listarProductos>> | null = null;
 
   try {
-    notas = await listarNotas();
+    productos = await listarProductos();
   } catch {
-    notas = null;
+    productos = null;
   }
 
   return (
@@ -39,7 +40,7 @@ export default async function Home() {
         <li>Leandro Jonatan Montenegro</li>
       </ul>
 
-      {notas === null ? (
+      {productos === null ? (
         <section className="mt-8 rounded-lg border border-dashed p-6">
           <h2 className="text-lg font-semibold">Falta conectar la base de datos</h2>
           <p className="mt-2 text-sm opacity-80">
@@ -58,19 +59,19 @@ export default async function Home() {
             </li>
           </ol>
         </section>
-      ) : notas.length === 0 ? (
+      ) : productos.length === 0 ? (
         <p className="mt-8 text-sm opacity-70">
           La base está conectada pero no hay datos. Corran <code>npm run db:seed</code>.
         </p>
       ) : (
         <section className="mt-8">
-          <h2 className="text-lg font-semibold">Notas de ejemplo</h2>
+          <h2 className="text-lg font-semibold">Productos de ejemplo</h2>
           <ul className="mt-4 space-y-3">
-            {notas.map((nota) => (
-              <li key={nota.id} className="rounded-lg border p-4">
-                <h3 className="font-medium">{nota.titulo}</h3>
-                <p className="mt-1 text-sm opacity-80">{nota.contenido}</p>
-                <p className="mt-2 text-xs opacity-60">por {nota.autor.nombre}</p>
+            {productos.map((producto) => (
+              <li key={producto.id} className="rounded-lg border p-4">
+                <h3 className="font-medium">{producto.nombre}</h3>
+                <p className="mt-1 text-sm opacity-80">${producto.preciolista.toFixed(2)}</p>
+                <p className="mt-2 text-xs opacity-60">Stock: {producto.stockactual.toFixed(2)}</p>
               </li>
             ))}
           </ul>
