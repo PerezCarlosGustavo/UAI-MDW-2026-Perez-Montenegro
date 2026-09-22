@@ -103,11 +103,29 @@ Las restricciones que **no** son obvias y que la IA no puede adivinar. Estas son
 - **Permisividad de stock (Stock Negativo):** La falta de stock registrado en productos con `permiteStock = true` no bloquea la caja. La venta se procesa normalmente dejando el stock en saldo negativo para no paralizar la atención al cliente, requiriendo un ajuste posterior por el administrador.
 
 
-## 7. Requisitos no funcionales
+## 7. Requisitos no funcionales --MEELS
 
-No son funcionalidades: son condiciones que todo el sistema tiene que cumplir. Se escriben ahora
-porque al final del cuatrimestre ya no se pueden arreglar. En la **clase 10** se auditan contra lo
-que hayan construido.
+### Mantenibilidad
+- El backend debe tener funciones puras para reglas de negocio y validaciones.
+- El acceso a datos debe centralizarse en un único cliente Prisma.
+- Las rutas deben seguir la estructura del App Router sin lógica duplicada.
+
+### Escalabilidad
+- El sistema debe soportar 10 vendedores operando en simultáneo sin degradación perceptible.
+- Las consultas de ventas deben paginarse para evitar cargas masivas.
+
+### Eficiencia
+- La carga del POS debe ser menor a 1 segundo en condiciones normales.
+- Las búsquedas de productos deben resolverse en menos de 150 ms.
+
+### Logging
+- Todas las ventas y cobranzas deben registrar timestamp y usuario.
+- Los errores deben registrarse en consola del servidor y en Vercel Logs.
+
+### Seguridad
+- Las rutas deben requerir sesión y rol válido.
+- Los datos sensibles (tokens, secrets) deben estar en variables de entorno.
+- No se debe exponer información de otros usuarios (pertenencia).
 
 ### Usabilidad
 
@@ -124,11 +142,11 @@ ejemplos por los de su dominio: lo que importa es que se pueda verificar, no que
 
 Esta lista es **igual para todos los proyectos**: no hay que adaptarla, hay que cumplirla.
 
-- [ ] Todo se puede operar **con el teclado**, y se ve dónde está el foco.
-- [ ] Los campos de formulario tienen `label` asociado, no solo *placeholder*.
-- [ ] Las imágenes que informan tienen texto alternativo; las decorativas, alternativo vacío.
-- [ ] El **contraste** entre texto y fondo llega a **4,5:1** (3:1 si la letra es grande).
-- [ ] El error nunca se comunica **solo con color**: siempre hay texto.
+- Navegación completa por teclado con foco visible.
+- Labels asociados a todos los inputs.
+- Texto alternativo en imágenes informativas.
+- Contraste mínimo 4.5:1.
+- Errores comunicados con texto, no solo color.
 
 ## 8. Integración externa
 
@@ -145,3 +163,24 @@ Lo que decidimos **no** hacer, para no volver a discutirlo en la clase 12.
 - Integración por hardware/puerto serie con balanzas electrónicas (los productos pesables/fraccionados no descuentan stock y se cargan definiendo la unidad o monto en el POS).
 - Módulo de compras automatizadas o pedidos automáticos a proveedores.
 - Programas de puntos, cupones o fidelización de clientes.
+
+## 10. Supuestos del sistema
+- Los precios de lista se actualizan manualmente por el administrador.
+- Los productos pesables o fraccionados no descuentan stock.
+- El cliente puede tener saldo a favor ilimitado.
+- El vendedor no puede editar ventas ya registradas.
+- Las ventas no se anulan; se corrigen con movimientos posteriores.
+- El sistema no maneja múltiples sucursales ni depósitos.
+- El POS siempre funciona con conexión a internet (no hay modo offline).
+- El precioPagado de ventas al contado es inmutable.
+- El monto entregado en cobranza siempre es en pesos argentinos.
+
+## 11. Glosario
+- POS: Punto de Venta.
+- CuentaCorrienteItem: Unidad física fiada pendiente de pago.
+- SaldoAFavor: Crédito en pesos disponible para el cliente.
+- FIFO: First In, First Out (orden cronológico).
+- PrecioPagado: Precio final congelado al momento de liquidar un ítem fiado.
+- PermiteStock: Indicador booleano que determina si un producto descuenta stock.
+- StockNegativo: Situación permitida donde el inventario queda por debajo de cero.
+- Venta Fiada: Venta cuyo pago se difiere y se registra en cuenta corriente.

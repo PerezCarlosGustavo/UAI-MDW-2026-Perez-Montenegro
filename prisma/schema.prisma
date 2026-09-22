@@ -9,14 +9,14 @@ datasource db {
 }
 
 model categoria {
-  id       BigInt     @id(map: "pk_categoria")
+  id       BigInt     @id(map: "pk_categoria") @default(autoincrement())
   nombre   String     @unique(map: "uq_categoria_nombre") @db.VarChar(100)
   activa   Boolean    @default(true)
   producto producto[]
 }
 
 model cliente {
-  id              BigInt           @id(map: "pk_cliente")
+  id              BigInt           @id(map: "pk_cliente") @default(autoincrement())
   nombre          String           @db.VarChar(150)
   documento       String?          @unique(map: "uq_cliente_documento") @db.VarChar(30)
   telefono        String?          @db.VarChar(50)
@@ -26,7 +26,7 @@ model cliente {
 }
 
 model cuentacorriente {
-  id                        BigInt                      @id(map: "pk_cuentacorriente")
+  id                        BigInt                      @id(map: "pk_cuentacorriente") @default(autoincrement())
   clienteid                 BigInt                      @unique(map: "uq_cuentacorriente_cliente")
   cliente                   cliente                     @relation(fields: [clienteid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_cuentacorriente_cliente")
   cuentacorrientemovimiento cuentacorrientemovimiento[]
@@ -34,7 +34,7 @@ model cuentacorriente {
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 model cuentacorrientemovimiento {
-  id                BigInt          @id(map: "pk_cuentacorrientemovimiento")
+  id                BigInt          @id(map: "pk_cuentacorrientemovimiento") @default(autoincrement())
   cuentacorrienteid BigInt
   ventaid           BigInt?
   productoid        BigInt?
@@ -54,7 +54,7 @@ model cuentacorrientemovimiento {
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 model detalleventa {
-  id             BigInt   @id(map: "pk_detalleventa")
+  id             BigInt   @id(map: "pk_detalleventa") @default(autoincrement())
   ventaid        BigInt
   productoid     BigInt
   cantidad       Decimal  @db.Decimal(12, 3)
@@ -69,7 +69,7 @@ model detalleventa {
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 model producto {
-  id                        BigInt                      @id(map: "pk_producto")
+  id                        BigInt                      @id(map: "pk_producto") @default(autoincrement())
   categoriaid               BigInt
   nombre                    String                      @db.VarChar(150)
   codigobarra               String?                     @unique(map: "uq_producto_codigobarra") @db.VarChar(50)
@@ -85,16 +85,19 @@ model producto {
 }
 
 model usuario {
-  id      BigInt  @id(map: "pk_usuario")
+  id      BigInt  @id @default(autoincrement())
   nombre  String  @db.VarChar(150)
-  usuario String  @unique(map: "uq_usuario_usuario") @db.VarChar(100)
+  usuario String  @unique @db.VarChar(100)
+  email   String? @unique
+  rol     String  @default("VENDEDOR")
   activo  Boolean @default(true)
   venta   venta[]
 }
 
+
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 model venta {
-  id                        BigInt                      @id(map: "pk_venta")
+  id                        BigInt                      @id(map: "pk_venta") @default(autoincrement())
   fecha                     DateTime                    @default(now()) @db.Timestamp(6)
   clienteid                 BigInt?
   usuarioid                 BigInt

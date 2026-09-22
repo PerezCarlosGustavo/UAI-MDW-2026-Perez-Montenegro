@@ -1,49 +1,95 @@
-/**
- * Configuración de autenticación y autorización.
- *
- * Se completa en la CLASE 6. Hasta entonces, este archivo documenta el
- * contrato que va a tener el resto del proyecto.
- *
- * Las dos funciones de abajo son las únicas formas válidas de saber quién
- * está haciendo un request. Ningún componente ni endpoint debe leer el
- * usuario de otro lado: si el `userId` o el `rol` vienen del cliente,
- * cualquiera puede mentir.
- */
+import { getServerSession } from "next-auth";
+import GoogleProvider from "next-auth/providers/google";
+import type { NextAuthOptions } from "next-auth";
+import { prisma } from "@/lib/db/client";
+import { ErrorAutorizacion } from "@/lib/auth/errores";
 
-export type Rol = "ADMIN" | "USUARIO";
+export const authOptions: NextAuthOptions = {
+  providers: [
+    GoogleProvider({
+      clientId: process.env.GOOGLE_CLIENT_ID!,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+    }),
+  ],
 
-export type UsuarioSesion = {
-  id: string;
-  email: string;
-  nombre: string;
-  rol: Rol;
+  callbacks: {
+    async signIn({ user }: { user: { email?: string | null; name?: string | null } }) {
+      if (!user.email) {
+        return false;
+      }
+
+      await prisma.usuario.upsert({
+        where: { email: user.email },
+        update: {},
+        create: {
+          email: user.email,
+          nombre: user.name ?? "",
+          usuario: user.email,
+          rol: "VENDEDOR",
+        },
+      });
+
+      return true;
+    },
+
+    async jwt({ token }: { token: { email?: string | null; id?: number; rol?: "ADMIN" | "VENDEDOR"; nombre?: string } }) {
+      if (!token.email) {
+        return token;
+      }
+
+      const usuario = await prisma.usuario.findUnique({
+        where: { email: token.email },
+      });
+
+      if (usuario) {
+        token.id = Number(usuario.id);
+        token.rol = usuario.rol as "ADMIN" | "VENDEDOR";
+        token.nombre = usuario.nombre;
+      }
+
+      return token;
+    },
+
+    async session({ session, token }) {
+      if (session.user) {
+        session.user.id = Number(token.id ?? 0);
+        session.user.rol = (token.rol as "ADMIN" | "VENDEDOR") ?? "VENDEDOR";
+        session.user.nombre = (token.nombre as string) ?? "";
+      }
+
+      return session;
+    },
+  },
 };
 
-/**
- * Devuelve el usuario de la sesión, o null si no hay sesión.
- * Se usa cuando la página funciona con y sin usuario logueado.
- */
-export async function obtenerUsuario(): Promise<UsuarioSesion | null> {
-  // TODO (clase 6): leer la sesión real de Auth.js.
-  return null;
+// -----------------------------
+// FUNCIONES DE AUTORIZACIÓN
+// -----------------------------
+
+export async function obtenerUsuario() {
+  const session = await getServerSession(authOptions);
+
+  if (!session?.user) {
+    return null;
+  }
+
+  return {
+    id: session.user.id,
+    rol: session.user.rol,
+    nombre: session.user.nombre,
+    email: session.user.email,
+  };
 }
 
-/**
- * Devuelve el usuario de la sesión o corta el request.
- * Se usa en todo lo que requiere estar logueado.
- *
- * Si además hay que verificar un rol, se compara acá y no en la UI:
- * esconder un botón no impide que alguien llame al endpoint con Postman.
- */
-export async function requerirUsuario(rol?: Rol): Promise<UsuarioSesion> {
+export async function requerirUsuario(rol?: "ADMIN" | "VENDEDOR") {
   const usuario = await obtenerUsuario();
 
   if (!usuario) {
-    throw new Error("No autenticado"); // → 401
+    throw new ErrorAutorizacion(401, "No autenticado");
   }
 
   if (rol && usuario.rol !== rol) {
-    throw new Error("No autorizado"); // → 403
+    throw new ErrorAutorizacion(403, "No autorizado");
   }
 
   return usuario;
