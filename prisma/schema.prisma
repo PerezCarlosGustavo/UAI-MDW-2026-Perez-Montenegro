@@ -88,7 +88,7 @@ model usuario {
   id      BigInt  @id @default(autoincrement())
   nombre  String  @db.VarChar(150)
   usuario String  @unique @db.VarChar(100)
-  email   String? @unique
+  email   String  @unique 
   rol     String  @default("VENDEDOR")
   activo  Boolean @default(true)
   venta   venta[]

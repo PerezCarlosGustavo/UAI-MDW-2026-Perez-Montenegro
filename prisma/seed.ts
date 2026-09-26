@@ -34,12 +34,14 @@ async function main() {
     update: {
       nombre: 'Administrador',
       usuario: 'admin',
+      email: 'admin@local.test',
       activo: true,
     },
     create: {
       id: 1n,
       nombre: 'Administrador',
       usuario: 'admin',
+      email: 'admin@local.test',
       activo: true,
     },
   });

@@ -4,6 +4,8 @@ import { prisma } from "@/lib/db/client";
 import { validarVenta } from "@/lib/venta/validaciones";
 import { validarReglasVenta } from "@/lib/venta/reglas";
 import { respuestaErrorAutorizacion } from "@/lib/auth/errores";
+import { generarTicketVentaPdf } from "@/lib/tickets/generarTicketVenta";
+import { subirTicketVentaSupabase } from "@/lib/services/supabaseBucket";
 
 export async function GET() {
   try {
@@ -84,5 +86,37 @@ export async function POST(req: Request) {
     });
   }
 
-  return Response.json(venta);
+  const idsProductos = venta.detalleventa.map((detalle) => detalle.productoid);
+  const productos = await prisma.producto.findMany({
+    where: { id: { in: idsProductos } },
+  });
+
+  const nombresPorProducto = new Map(
+    productos.map((producto) => [producto.id.toString(), producto.nombre])
+  );
+
+  const detalleTicket = venta.detalleventa.map((detalle) => ({
+    nombre: nombresPorProducto.get(detalle.productoid.toString()) ?? "Producto",
+    cantidad: Number(detalle.cantidad),
+    subtotal: Number(detalle.subtotal),
+  }));
+
+  const pdfBuffer = await generarTicketVentaPdf({
+    ventaId: venta.id,
+    productos: detalleTicket,
+    total: Number(venta.total),
+  });
+
+    try {
+     await subirTicketVentaSupabase({
+      pdfBuffer,
+      ventaId: Number(venta.id),
+      bucketName: "tickets",
+    });
+  } catch (error) {
+    console.error("Error al guardar el ticket en Supabase:", error);
+  }
+
+    return Response.json(venta);
+
 }
