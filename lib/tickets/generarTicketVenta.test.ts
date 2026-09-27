@@ -16,17 +16,21 @@ describe("generarTicketVentaPdf", () => {
       destino: dir,
     });
 
-    expect(Buffer.isBuffer(buffer)).toBe(true);
-    expect(buffer.length).toBeGreaterThan(0);
+    try {
+      expect(Buffer.isBuffer(buffer)).toBe(true);
+      expect(buffer.length).toBeGreaterThan(0);
 
-    const filePath = path.join(dir, "ticket-venta-123.pdf");
-    const exists = await fs
-      .access(filePath)
-      .then(() => true)
-      .catch(() => false);
+      const filePath = path.join(dir, "ticket-venta-123.pdf");
+      const exists = await fs
+        .access(filePath)
+        .then(() => true)
+        .catch(() => false);
 
-    expect(exists).toBe(true);
-    const stat = await fs.stat(filePath);
-    expect(stat.size).toBeGreaterThan(0);
+      expect(exists).toBe(true);
+      const stat = await fs.stat(filePath);
+      expect(stat.size).toBeGreaterThan(0);
+    } finally {
+      await fs.rm(dir, { recursive: true, force: true });
+    }
   });
 });

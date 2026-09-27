@@ -128,6 +128,12 @@ export async function generarTicketVentaPdf({
       )
     );
 
-  return Buffer.from(await renderToBuffer(React.createElement(TicketDocument)));
-;
+  const buffer = Buffer.from(await renderToBuffer(React.createElement(TicketDocument)));
+
+  if (destino) {
+    await fs.mkdir(destino, { recursive: true });
+    await fs.writeFile(path.join(destino, `ticket-venta-${ventaId}.pdf`), buffer);
+  }
+
+  return buffer;
 }

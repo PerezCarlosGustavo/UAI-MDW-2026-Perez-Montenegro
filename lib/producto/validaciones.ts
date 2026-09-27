@@ -1,19 +1,17 @@
-export function validarProducto(data: any) {
+import type { ActualizarProductoInput, CrearProductoInput } from "@/lib/schemas/producto";
+
+export function validarProducto(data: ActualizarProductoInput | CrearProductoInput) {
   const errores: string[] = [];
 
-  if (!data.nombre || data.nombre.trim().length === 0) {
+  if (data.nombre !== undefined && data.nombre.trim().length === 0) {
     errores.push("El nombre es obligatorio.");
   }
 
-  if (!data.categoriaid) {
-    errores.push("La categoría es obligatoria.");
-  }
-
-  if (data.preciolista < 0) {
+  if (data.preciolista !== undefined && data.preciolista < 0) {
     errores.push("El precio de lista no puede ser negativo.");
   }
 
-  if (data.stockactual < 0) {
+  if (data.stockactual !== undefined && data.stockactual < 0) {
     errores.push("El stock no puede ser negativo.");
   }
 

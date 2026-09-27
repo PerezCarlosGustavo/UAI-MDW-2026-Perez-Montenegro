@@ -1,12 +1,10 @@
-export function validarCliente(data: any) {
+import type { ActualizarClienteInput, CrearClienteInput } from "@/lib/schemas/cliente";
+
+export function validarCliente(data: ActualizarClienteInput | CrearClienteInput) {
   const errores: string[] = [];
 
-  if (!data.nombre || data.nombre.trim().length === 0) {
+  if (data.nombre !== undefined && data.nombre.trim().length === 0) {
     errores.push("El nombre es obligatorio.");
-  }
-
-  if (data.email && !data.email.includes("@")) {
-    errores.push("El email es inválido.");
   }
 
   if (data.telefono && data.telefono.length < 6) {

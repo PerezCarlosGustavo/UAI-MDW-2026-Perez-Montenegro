@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db/client";
 import { validarProducto } from "@/lib/producto/validaciones";
 import { validarReglasProducto } from "@/lib/producto/reglas";
 import { respuestaErrorAutorizacion } from "@/lib/auth/errores";
+import { crearProductoSchema } from "@/lib/schemas/producto";
 
 export async function POST(req: Request) {
   try {
@@ -11,7 +12,14 @@ export async function POST(req: Request) {
     return respuestaErrorAutorizacion(error) ?? Response.json({ error: "Error interno" }, { status: 500 });
   }
 
-  const data = await req.json();
+  const resultado = crearProductoSchema.safeParse(await req.json());
+  if (!resultado.success) {
+    return Response.json(
+      { error: "Validación fallida", detalles: resultado.error.issues.map((issue) => issue.message) },
+      { status: 400 }
+    );
+  }
+  const data = resultado.data;
 
   // Validaciones básicas (forma)
   const validacion = validarProducto(data);

@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db/client";
 import { validarCliente } from "@/lib/cliente/validaciones";
 import { validarReglasCliente } from "@/lib/cliente/reglas";
 import { respuestaErrorAutorizacion } from "@/lib/auth/errores";
+import { crearClienteSchema } from "@/lib/schemas/cliente";
 
 export async function POST(req: Request) {
   try {
@@ -11,7 +12,14 @@ export async function POST(req: Request) {
     return respuestaErrorAutorizacion(error) ?? Response.json({ error: "Error interno" }, { status: 500 });
   }
 
-  const data = await req.json();
+  const resultado = crearClienteSchema.safeParse(await req.json());
+  if (!resultado.success) {
+    return Response.json(
+      { error: "Validación fallida", detalles: resultado.error.issues.map((issue) => issue.message) },
+      { status: 400 }
+    );
+  }
+  const data = resultado.data;
 
   // Validaciones básicas
   const validacion = validarCliente(data);

@@ -17,7 +17,8 @@ export default async function Home() {
 
   try {
     productos = await listarProductos();
-  } catch {
+  } catch (error) {
+    console.error("Error al cargar productos desde la base de datos:", error);
     productos = null;
   }
 
@@ -32,22 +33,10 @@ export default async function Home() {
 
       {productos === null ? (
         <section className="mt-8 rounded-lg border border-dashed p-6">
-          <h2 className="text-lg font-semibold">Falta conectar la base de datos</h2>
+          <h2 className="text-lg font-semibold">No se pudieron cargar los productos</h2>
           <p className="mt-2 text-sm opacity-80">
-            El proyecto levanta, pero todavía no puede leer datos. Es lo esperable
-            hasta que hagan el paso de base de datos de la clase 1:
+            Revisá la conexión a la base de datos y el error en la terminal del servidor.
           </p>
-          <ol className="mt-3 list-decimal space-y-1 pl-5 text-sm opacity-80">
-            <li>Crear un proyecto en Supabase (o MongoDB Atlas).</li>
-            <li>
-              Copiar la connection string a <code>DATABASE_URL</code> en{" "}
-              <code>.env.local</code>.
-            </li>
-            <li>
-              Correr <code>npx prisma migrate dev --name init</code> y{" "}
-              <code>npm run db:seed</code>.
-            </li>
-          </ol>
         </section>
       ) : productos.length === 0 ? (
         <p className="mt-8 text-sm opacity-70">

@@ -1,6 +1,10 @@
 import { prisma } from "@/lib/db/client";
+import type { ActualizarClienteInput, CrearClienteInput } from "@/lib/schemas/cliente";
 
-export async function validarReglasCliente(data: any, id?: bigint) {
+export async function validarReglasCliente(
+  data: ActualizarClienteInput | CrearClienteInput,
+  id?: bigint
+) {
   const errores: string[] = [];
 
   // Documento único (si se envía)
@@ -25,7 +29,7 @@ export async function validarReglasCliente(data: any, id?: bigint) {
   }
 
   // Cliente inactivo → no debería poder operar
-  if (data.activo === false) {
+  if (data.activo === false && id !== undefined) {
     // Si el cliente tiene cuenta corriente, no puede desactivarse sin cerrar movimientos
     const cuenta = await prisma.cuentacorriente.findUnique({
       where: { clienteid: id },

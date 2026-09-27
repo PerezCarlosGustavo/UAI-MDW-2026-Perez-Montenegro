@@ -1,5 +1,4 @@
 import { prisma } from "@/lib/db/client";
-import type { CrearProductoInput } from "@/lib/schemas/producto";
 
 const LIMITE_POR_DEFECTO = 50;
 

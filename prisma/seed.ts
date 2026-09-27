@@ -132,6 +132,30 @@ async function main() {
     });
   }
 
+  await prisma.$queryRaw`
+    SELECT
+      setval(
+        pg_get_serial_sequence('public.categoria', 'id'),
+        COALESCE((SELECT MAX(id) FROM public.categoria), 1),
+        EXISTS (SELECT 1 FROM public.categoria)
+      ),
+      setval(
+        pg_get_serial_sequence('public.cliente', 'id'),
+        COALESCE((SELECT MAX(id) FROM public.cliente), 1),
+        EXISTS (SELECT 1 FROM public.cliente)
+      ),
+      setval(
+        pg_get_serial_sequence('public.producto', 'id'),
+        COALESCE((SELECT MAX(id) FROM public.producto), 1),
+        EXISTS (SELECT 1 FROM public.producto)
+      ),
+      setval(
+        pg_get_serial_sequence('public.usuario', 'id'),
+        COALESCE((SELECT MAX(id) FROM public.usuario), 1),
+        EXISTS (SELECT 1 FROM public.usuario)
+      )
+  `;
+
   console.log('Seed finalizado correctamente');
   console.log('Usuario creado:', usuarioAdmin.usuario);
 }

@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db/client";
+import type { CrearVentaInput } from "@/lib/schemas/venta";
 
-export async function validarReglasVenta(data: any) {
+export async function validarReglasVenta(data: CrearVentaInput) {
   const errores: string[] = [];
 
   // Cliente opcional, pero si viene debe existir
@@ -30,7 +31,7 @@ export async function validarReglasVenta(data: any) {
 
     // Validar stock si aplica
     if (producto.permitestock) {
-      if (producto.stockactual < d.cantidad) {
+      if (producto.stockactual.lt(d.cantidad)) {
         errores.push(
           `Stock insuficiente para ${producto.nombre}. Disponible: ${producto.stockactual}, solicitado: ${d.cantidad}.`
         );
@@ -48,7 +49,7 @@ export async function validarReglasVenta(data: any) {
 
   // Validar total coherente
   const totalCalculado = data.detalles.reduce(
-    (acc: number, d: any) => acc + Number(d.subtotal),
+    (acc, d) => acc + Number(d.subtotal),
     0
   );
 

@@ -6,6 +6,7 @@ import { validarReglasVenta } from "@/lib/venta/reglas";
 import { respuestaErrorAutorizacion } from "@/lib/auth/errores";
 import { generarTicketVentaPdf } from "@/lib/tickets/generarTicketVenta";
 import { subirTicketVentaSupabase } from "@/lib/services/supabaseBucket";
+import { crearVentaSchema } from "@/lib/schemas/venta";
 
 export async function GET() {
   try {
@@ -35,7 +36,14 @@ export async function POST(req: Request) {
     return respuestaErrorAutorizacion(error) ?? Response.json({ error: "Error interno" }, { status: 500 });
   }
 
-  const data = await req.json();
+  const resultado = crearVentaSchema.safeParse(await req.json());
+  if (!resultado.success) {
+    return Response.json(
+      { error: "Validación fallida", detalles: resultado.error.issues.map((issue) => issue.message) },
+      { status: 400 }
+    );
+  }
+  const data = resultado.data;
 
   // Validaciones de forma
   const validacion = validarVenta(data);
@@ -63,7 +71,7 @@ export async function POST(req: Request) {
       tipopago: data.tipopago,
       total: data.total,
       detalleventa: {
-        create: data.detalles.map((d: any) => ({
+        create: data.detalles.map((d) => ({
           productoid: BigInt(d.productoid),
           cantidad: d.cantidad,
           preciounitario: d.preciounitario,

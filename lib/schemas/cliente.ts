@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const crearClienteSchema = z.object({
+const camposClienteSchema = z.object({
   nombre: z
     .string()
     .trim()
@@ -18,7 +18,15 @@ export const crearClienteSchema = z.object({
     .max(50, "El teléfono no puede superar los 50 caracteres")
     .optional()
     .nullable(),
+});
+
+export const crearClienteSchema = camposClienteSchema.extend({
   activo: z.boolean().optional().default(true),
 });
 
+export const actualizarClienteSchema = camposClienteSchema.partial().extend({
+  activo: z.boolean().optional(),
+});
+
 export type CrearClienteInput = z.infer<typeof crearClienteSchema>;
+export type ActualizarClienteInput = z.infer<typeof actualizarClienteSchema>;

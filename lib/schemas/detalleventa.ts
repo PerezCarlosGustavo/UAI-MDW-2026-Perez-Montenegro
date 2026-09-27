@@ -8,4 +8,7 @@ export const crearDetalleVentaSchema = z.object({
   subtotal: z.coerce.number().nonnegative(),
 });
 
+export const detalleVentaDeVentaSchema = crearDetalleVentaSchema.omit({ ventaid: true });
+
 export type CrearDetalleVentaInput = z.infer<typeof crearDetalleVentaSchema>;
+export type DetalleVentaDeVentaInput = z.infer<typeof detalleVentaDeVentaSchema>;

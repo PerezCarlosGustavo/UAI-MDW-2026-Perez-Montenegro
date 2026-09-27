@@ -1,4 +1,6 @@
-export function validarVenta(data: any) {
+import type { CrearVentaInput } from "@/lib/schemas/venta";
+
+export function validarVenta(data: CrearVentaInput) {
   const errores: string[] = [];
 
   if (!data.tipopago) {

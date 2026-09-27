@@ -1,12 +1,11 @@
 import { prisma } from "@/lib/db/client";
+import type { ActualizarProductoInput, CrearProductoInput } from "@/lib/schemas/producto";
 
-export async function validarReglasProducto(data: any) {
+export async function validarReglasProducto(data: ActualizarProductoInput | CrearProductoInput) {
   const errores: string[] = [];
 
   // Categoría debe existir
-  if (!data.categoriaid) {
-    errores.push("La categoría es obligatoria.");
-  } else {
+  if (data.categoriaid !== undefined) {
     const categoria = await prisma.categoria.findUnique({
       where: { id: BigInt(data.categoriaid) },
     });
@@ -17,12 +16,12 @@ export async function validarReglasProducto(data: any) {
   }
 
   // Precio de lista
-  if (data.preciolista < 0) {
+  if (data.preciolista !== undefined && data.preciolista < 0) {
     errores.push("El precio de lista no puede ser negativo.");
   }
 
   // Stock
-  if (data.stockactual < 0) {
+  if (data.stockactual !== undefined && data.stockactual < 0) {
     errores.push("El stock actual no puede ser negativo.");
   }
 
