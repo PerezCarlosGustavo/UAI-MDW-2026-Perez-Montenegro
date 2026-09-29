@@ -2,6 +2,7 @@ import { promises as fs } from "node:fs";
 import path from "node:path";
 import * as React from "react";
 import { Document, Page, StyleSheet, Text, View, renderToBuffer } from "@react-pdf/renderer";
+import { subirTicketVentaSupabase } from "@/lib/services/supabaseBucket";
 
 export type ProductoTicket = {
   nombre: string;
@@ -128,6 +129,9 @@ export async function generarTicketVentaPdf({
       )
     );
 
-  return Buffer.from(await renderToBuffer(React.createElement(TicketDocument)));
+  const pdfBuffer = Buffer.from(await renderToBuffer(React.createElement(TicketDocument)));
+  await subirTicketVentaSupabase({ pdfBuffer, ventaId: ventaId.toString() });
+
+  return pdfBuffer;
 ;
 }

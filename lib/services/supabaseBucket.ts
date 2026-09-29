@@ -1,9 +1,10 @@
 import { createClient } from "@supabase/supabase-js";
 
 function getSupabaseClient() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
+  const supabaseUrl = process.env.NeXT_PUBLIC_SUPABASE_URL;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY;
+  console.log("Supabase URL:", supabaseUrl);
+  console.log("Supabase Anon Key:", supabaseAnonKey);
   if (!supabaseUrl || !supabaseAnonKey) {
     throw new Error("Faltan NEXT_PUBLIC_SUPABASE_URL o NEXT_PUBLIC_SUPABASE_ANON_KEY en el entorno");
   }
@@ -19,7 +20,7 @@ function getSupabaseClient() {
 export async function subirTicketVentaSupabase({
   pdfBuffer,
   ventaId,
-  bucketName = "facturas",
+  bucketName = "Facturas",
 }: {
   pdfBuffer: Buffer;
   ventaId: number | string;

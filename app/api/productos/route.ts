@@ -4,6 +4,25 @@ import { validarProducto } from "@/lib/producto/validaciones";
 import { validarReglasProducto } from "@/lib/producto/reglas";
 import { respuestaErrorAutorizacion } from "@/lib/auth/errores";
 
+export async function GET() {
+  try {
+    await verificarPermiso("producto", "ver");
+  } catch (error) {
+    return respuestaErrorAutorizacion(error) ?? Response.json({ error: "Error interno" }, { status: 500 });
+  }
+
+  const productos = await prisma.producto.findMany({
+    where: { activo: true },
+    orderBy: { id: "asc" }
+  });
+
+  return Response.json(productos.map(({ id, categoriaid, ...producto }) => ({
+    ...producto,
+    id: Number(id),
+    categoriaid: Number(categoriaid),
+  })));
+}
+
 export async function POST(req: Request) {
   try {
     await verificarPermiso("producto", "crear");

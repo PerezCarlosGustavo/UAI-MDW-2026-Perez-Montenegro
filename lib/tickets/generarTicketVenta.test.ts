@@ -1,7 +1,12 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { promises as fs } from "node:fs";
 import path from "node:path";
+import { subirTicketVentaSupabase } from "@/lib/services/supabaseBucket";
 import { generarTicketVentaPdf } from "./generarTicketVenta";
+
+vi.mock("@/lib/services/supabaseBucket", () => ({
+  subirTicketVentaSupabase: vi.fn().mockResolvedValue({}),
+}));
 
 describe("generarTicketVentaPdf", () => {
   it("devuelve un buffer PDF y opcionalmente lo guarda en disco", async () => {
@@ -18,6 +23,10 @@ describe("generarTicketVentaPdf", () => {
 
     expect(Buffer.isBuffer(buffer)).toBe(true);
     expect(buffer.length).toBeGreaterThan(0);
+    expect(subirTicketVentaSupabase).toHaveBeenCalledWith({
+      pdfBuffer: buffer,
+      ventaId: "123",
+    });
 
     const filePath = path.join(dir, "ticket-venta-123.pdf");
     const exists = await fs
