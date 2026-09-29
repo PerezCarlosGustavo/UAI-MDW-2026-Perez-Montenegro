@@ -5,6 +5,16 @@ import { validarVenta } from "@/lib/venta/validaciones";
 import { validarReglasVenta } from "@/lib/venta/reglas";
 import { respuestaErrorAutorizacion } from "@/lib/auth/errores";
 import { generarTicketVentaPdf } from "@/lib/tickets/generarTicketVenta";
+
+function respuestaJsonConBigInt(data: object) {
+  const body = JSON.stringify(data, (_key, value) =>
+    typeof value === "bigint" ? Number(value) : value
+  );
+
+  return new Response(body, {
+    headers: { "Content-Type": "application/json" },
+  });
+}
 import { subirTicketVentaSupabase } from "@/lib/services/supabaseBucket";
 import { crearVentaSchema } from "@/lib/schemas/venta";
 
@@ -19,7 +29,7 @@ export async function GET() {
     include: { detalleventa: true, cliente: true, usuario: true },
   });
 
-  return Response.json(ventas);
+  return respuestaJsonConBigInt(ventas);
 }
 
 export async function POST(req: Request) {
@@ -62,6 +72,7 @@ export async function POST(req: Request) {
       { status: 409 }
     );
   }
+  console.log(data, usuario);
 
   // Crear venta
   const venta = await prisma.venta.create({
@@ -93,7 +104,7 @@ export async function POST(req: Request) {
       },
     });
   }
-
+console.log("Venta creada con ID:", venta);
   const idsProductos = venta.detalleventa.map((detalle) => detalle.productoid);
   const productos = await prisma.producto.findMany({
     where: { id: { in: idsProductos } },
@@ -109,22 +120,12 @@ export async function POST(req: Request) {
     subtotal: Number(detalle.subtotal),
   }));
 
-  const pdfBuffer = await generarTicketVentaPdf({
+  await generarTicketVentaPdf({
     ventaId: venta.id,
     productos: detalleTicket,
     total: Number(venta.total),
   });
 
-    try {
-     await subirTicketVentaSupabase({
-      pdfBuffer,
-      ventaId: Number(venta.id),
-      bucketName: "tickets",
-    });
-  } catch (error) {
-    console.error("Error al guardar el ticket en Supabase:", error);
-  }
-
-    return Response.json(venta);
+  return respuestaJsonConBigInt(venta);
 
 }
