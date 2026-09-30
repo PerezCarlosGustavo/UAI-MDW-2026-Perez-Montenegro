@@ -1,15 +1,15 @@
 import { describe, expect, it, vi } from "vitest";
 import { promises as fs } from "node:fs";
 import path from "node:path";
-import { subirTicket } from "@/lib/services/storageService";
+import { subirTicket } from "@/lib/servicios/storage";
 import { generarTicketVentaPdf } from "./generarTicketVenta";
 
-vi.mock("@/lib/services/storageService", () => ({
+vi.mock("@/lib/servicios/storage", () => ({
   subirTicket: vi.fn().mockResolvedValue({}),
 }));
 
 describe("generarTicketVentaPdf", () => {
-  it("devuelve un buffer PDF y opcionalmente lo guarda en disco", async () => {
+  it("devuelve un buffer PDF y lo guarda en disco cuando recibe destino", async () => {
     const dir = path.join(process.cwd(), "tmp", "test-tickets");
     const buffer = await generarTicketVentaPdf({
       ventaId: BigInt(123),
@@ -24,10 +24,7 @@ describe("generarTicketVentaPdf", () => {
     try {
       expect(Buffer.isBuffer(buffer)).toBe(true);
       expect(buffer.length).toBeGreaterThan(0);
-      expect(subirTicket).toHaveBeenCalledWith({
-        pdfBuffer: buffer,
-        ventaId: "123",
-      });
+      expect(subirTicket).not.toHaveBeenCalled();
 
       const filePath = path.join(dir, "ticket-venta-123.pdf");
       const exists = await fs
@@ -41,5 +38,19 @@ describe("generarTicketVentaPdf", () => {
     } finally {
       await fs.rm(dir, { recursive: true, force: true });
     }
+  });
+
+  it("sube el PDF a storage cuando no recibe destino", async () => {
+    const buffer = await generarTicketVentaPdf({
+      ventaId: BigInt(123),
+      productos: [{ nombre: "Producto A", cantidad: 2, subtotal: 150 }],
+      total: 150,
+    });
+
+    expect(Buffer.isBuffer(buffer)).toBe(true);
+    expect(subirTicket).toHaveBeenCalledWith({
+      pdfBuffer: buffer,
+      ventaId: "123",
+    });
   });
 });
