@@ -19,9 +19,9 @@ export const authOptions: NextAuthOptions = {
         return false;
       }
 
-      // Todo usuario nuevo entra como VENDEDOR, el rol con menos permisos.
-      // `update` queda vacío a propósito: si ya existe, loguearse no le
-      // cambia el rol. ADMIN se asigna solo desde la base (ver seed).
+      // Todo usuario nuevo entra como PENDIENTE: sin ningún permiso hasta que
+      // un ADMIN lo apruebe desde el ABM de usuarios. `update` queda vacío a
+      // propósito: si ya existe, loguearse no le cambia el rol.
       await prisma.usuario.upsert({
         where: { email: user.email },
         update: {},
@@ -29,7 +29,7 @@ export const authOptions: NextAuthOptions = {
           email: user.email,
           nombre: user.name ?? "",
           usuario: user.email,
-          rol: "VENDEDOR",
+          rol: "PENDIENTE",
         },
       });
 

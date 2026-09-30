@@ -39,7 +39,7 @@ Cada historia lleva su criterio de aceptación: cómo se verifica que está term
 **Como** *usuario*, **quiero** iniciar sesión con mi cuenta de Google, **para** acceder a las funcionalidades de mi rol. (Decisión en ADR 0007.)
 
 Criterios de aceptación:
-- [ ] Dado un usuario que entra por primera vez con Google, el sistema lo registra con rol VENDEDOR. El rol ADMIN solo se asigna desde la base, nunca desde la API.
+- [ ] Dado un usuario que entra por primera vez con Google, el sistema lo registra con rol PENDIENTE y le muestra que su cuenta espera aprobación; con ese rol toda la API responde 403. Solo un ADMIN puede asignarle otro rol.
 - [ ] Dado un usuario registrado y activo, cuando inicia sesión con Google, el sistema lo redirige al POS con los permisos de su rol.
 - [ ] Caso de error: cuando se intenta usar la API sin sesión, responde 401; con un rol sin permiso, 403. Un usuario desactivado deja de estar autenticado.
 

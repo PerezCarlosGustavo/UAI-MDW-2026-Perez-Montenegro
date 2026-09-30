@@ -28,7 +28,7 @@ En la spec original (H1) habíamos puesto login con email y contraseña. Eso nos
 |C. JWT, pero el rol se lee de la base en cada request|No hace falta tabla de sesiones y el rol siempre está actualizado|Una consulta chica por request|
 
 ## ✅ Decisión
-- **Proveedor: Google (opción B).** Quién sos lo resuelve Google; **qué sos** (ADMIN o VENDEDOR) lo decide nuestra tabla `usuario`.
+- **Proveedor: Google (opción B).** Quién sos lo resuelve Google; **qué sos** (ADMIN, VENDEDOR o PENDIENTE) lo decide nuestra tabla `usuario`.
 - **Sesión: JWT, leyendo el rol de la base en cada request (opción C).**
 
 Elegimos C porque en nuestro caso el dueño puede promover o desactivar a un vendedor, y queremos que eso tenga efecto enseguida. Con el volumen del almacén (un puñado de requests por minuto), la consulta extra no pesa.
@@ -36,9 +36,9 @@ Elegimos C porque en nuestro caso el dueño puede promover o desactivar a un ven
 ## 📌 Consecuencias
 ### ✔ Lo que se vuelve más fácil
 - No hay contraseñas en nuestra base.
-- Todo usuario nuevo entra como VENDEDOR. El upsert del `signIn` nunca pisa el rol, así que nadie puede darse ADMIN a sí mismo desde la API.
+- Todo usuario nuevo entra como PENDIENTE, sin ningún permiso: la URL es pública y tener Gmail no alcanza para operar. Un ADMIN lo aprueba desde el ABM de usuarios. El upsert del `signIn` nunca pisa el rol, así que nadie puede subirse de rol desde el login.
 - Si desactivamos a un usuario (`activo = false`) o lo borramos, en el siguiente request deja de estar autenticado (401).
-- ADMIN se asigna desde la base: `ADMIN_EMAIL` en el seed.
+- El primer ADMIN se asigna con `ADMIN_EMAIL` en el seed (alguien tiene que existir antes de poder aprobar a otros). Los demás roles los asigna un ADMIN desde el ABM.
 
 ### ❗ Lo que se vuelve más difícil
 - Cada URL nueva (producción, otro dominio) hay que registrarla en Google Cloud Console. Los preview deployments de Vercel no sirven para probar el login, porque cambian de URL.

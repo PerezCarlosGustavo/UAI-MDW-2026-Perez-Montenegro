@@ -104,7 +104,7 @@ async function main() {
 
   // El ADMIN es una persona real que entra con Google. El mail va por
   // variable de entorno para no dejar un mail personal commiteado.
-  // El resto de los usuarios se crean solos como VENDEDOR al loguearse.
+  // El resto de los usuarios se crean solos como PENDIENTE al loguearse y los aprueba un ADMIN.
   const emailAdmin = process.env.ADMIN_EMAIL;
 
   if (emailAdmin) {
