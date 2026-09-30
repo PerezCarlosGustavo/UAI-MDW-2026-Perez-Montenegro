@@ -8,7 +8,8 @@ Sistema de Punto de Venta, Inventario y Cuentas Corrientes (FIFO)
 - Leandro Jonatan Montenegro
 
 
-**Producción:** https://almacen-pos.vercel.app  
+**Producción:** https://almacenpos-mdw.vercel.app
+
 **🎯 Problema que resuelve**
 
 Los comercios de barrio pierden capital por:

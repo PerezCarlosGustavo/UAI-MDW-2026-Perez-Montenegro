@@ -7,14 +7,3 @@ export class ErrorAutorizacion extends Error {
     this.name = "ErrorAutorizacion";
   }
 }
-
-export function respuestaErrorAutorizacion(error: unknown) {
-  if (!(error instanceof ErrorAutorizacion)) {
-    return null;
-  }
-
-  return Response.json(
-    { error: error.message },
-    { status: error.status }
-  );
-}
