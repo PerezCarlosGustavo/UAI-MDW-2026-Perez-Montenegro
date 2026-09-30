@@ -1,1 +1,0 @@
-export { subirTicket } from "@/lib/servicios/storage";

@@ -154,7 +154,6 @@ Esta lista es **igual para todos los proyectos**: no hay que adaptarla, hay que 
 **Cuál:** Supabase Storage para almacenar tickets PDF y @react-pdf/renderer para generarlos. El envío de correo mediante Resend queda previsto para la entrega digital.
 **Para qué:** Guardar el comprobante de la venta en el bucket `Facturas` y generar el PDF que puede entregarse al cliente.
 **Qué pasa si se cae:** La subida a Supabase Storage tiene un timeout de 10 segundos. Si falta la configuración, falla la subida o vence el timeout, se registra el error y la operación devuelve `null`; la venta no se revierte y el PDF generado se devuelve y puede guardarse localmente.
-**Credenciales:** `SUPABASE_URL` y `SUPABASE_SERVICE_ROLE_KEY` son variables privadas del servidor; ninguna lleva el prefijo `NEXT_PUBLIC_`.
 
 ## 9. Fuera de alcance
 

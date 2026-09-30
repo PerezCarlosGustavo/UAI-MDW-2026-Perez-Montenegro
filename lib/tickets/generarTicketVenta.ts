@@ -2,7 +2,7 @@ import { promises as fs } from "node:fs";
 import path from "node:path";
 import * as React from "react";
 import { Document, Page, StyleSheet, Text, View, renderToBuffer } from "@react-pdf/renderer";
-import { subirTicket as subirPdf } from "@/lib/servicios/storage";
+import { subirPdf  } from "@/lib/servicios/storageService";
 
 export type ProductoTicket = {
   nombre: string;
@@ -134,9 +134,7 @@ export async function generarTicketVentaPdf({
     await fs.mkdir(destino, { recursive: true });
     await fs.writeFile(path.join(destino, `ticket-venta-${ventaId.toString()}.pdf`), pdfBuffer);
   }
-  else{
-    await subirPdf({ pdfBuffer, ventaId: ventaId.toString() });
-  }
+  await subirPdf({ pdfBuffer, ventaId: ventaId.toString() });
 
   return pdfBuffer;
 }

@@ -2,7 +2,7 @@ import { createClient } from "@supabase/supabase-js";
 
 const STORAGE_TIMEOUT_MS = 10_000;
 
-export async function subirTicket({
+export async function subirPdf({
   pdfBuffer,
   ventaId,
   bucketName = "Facturas",
