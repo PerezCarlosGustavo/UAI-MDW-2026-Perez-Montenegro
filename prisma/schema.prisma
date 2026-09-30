@@ -84,12 +84,19 @@ model producto {
   @@index([categoriaid], map: "ix_producto_categoriaid")
 }
 
+// Enum y no String: con String la base acepta "admin", "Admin" o cualquier
+// cosa, y la comparación de roles en el código falla sin avisar.
+enum Rol {
+  ADMIN
+  VENDEDOR
+}
+
 model usuario {
   id      BigInt  @id @default(autoincrement())
   nombre  String  @db.VarChar(150)
   usuario String  @unique @db.VarChar(100)
-  email   String  @unique 
-  rol     String  @default("VENDEDOR")
+  email   String  @unique
+  rol     Rol     @default(VENDEDOR)
   activo  Boolean @default(true)
   venta   venta[]
 }
