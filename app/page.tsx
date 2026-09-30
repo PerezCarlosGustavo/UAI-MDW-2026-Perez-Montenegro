@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { obtenerUsuario } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { listarProductos } from "@/lib/productos";
@@ -41,6 +42,13 @@ export default async function Home() {
         <li>Carlos Gustavo Perez</li>
         <li>Leandro Jonatan Montenegro</li>
       </ul>
+
+      <nav className="mt-6 flex gap-4 text-sm">
+        <Link href="/ventas" className="underline">Ventas</Link>
+        {usuario.rol === "ADMIN" ? (
+          <Link href="/usuarios" className="underline">Usuarios</Link>
+        ) : null}
+      </nav>
 
       {productos === null ? (
         <section className="mt-8 rounded-lg border border-dashed p-6">
