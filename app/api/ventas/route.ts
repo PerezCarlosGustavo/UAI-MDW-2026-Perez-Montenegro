@@ -1,21 +1,11 @@
 import { verificarPermiso } from "@/lib/auth/verificarPermiso";
 import { requerirUsuario } from "@/app/api/auth/auth";
 import { prisma } from "@/lib/db/client";
+import { responderJson } from "@/lib/utils";
 import { validarVenta } from "@/lib/venta/validaciones";
 import { validarReglasVenta } from "@/lib/venta/reglas";
 import { respuestaErrorAutorizacion } from "@/lib/auth/errores";
 import { generarTicketVentaPdf } from "@/lib/tickets/generarTicketVenta";
-
-function respuestaJsonConBigInt(data: object) {
-  const body = JSON.stringify(data, (_key, value) =>
-    typeof value === "bigint" ? Number(value) : value
-  );
-
-  return new Response(body, {
-    headers: { "Content-Type": "application/json" },
-  });
-}
-import { subirTicketVentaSupabase } from "@/lib/services/supabaseBucket";
 import { crearVentaSchema } from "@/lib/schemas/venta";
 
 export async function GET() {
@@ -29,7 +19,7 @@ export async function GET() {
     include: { detalleventa: true, cliente: true, usuario: true },
   });
 
-  return respuestaJsonConBigInt(ventas);
+  return responderJson(ventas);
 }
 
 export async function POST(req: Request) {
@@ -126,6 +116,6 @@ console.log("Venta creada con ID:", venta);
     total: Number(venta.total),
   });
 
-  return respuestaJsonConBigInt(venta);
+  return responderJson(venta, 201);
 
 }

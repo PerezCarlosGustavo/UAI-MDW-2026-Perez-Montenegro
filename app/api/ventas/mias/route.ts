@@ -1,5 +1,6 @@
 import { requerirUsuario } from "@/app/api/auth/auth";
 import { prisma } from "@/lib/db/client";
+import { responderJson } from "@/lib/utils";
 import { respuestaErrorAutorizacion } from "@/lib/auth/errores";
 
 export async function GET() {
@@ -15,5 +16,5 @@ export async function GET() {
     include: { detalleventa: true, cliente: true },
   });
 
-  return Response.json(ventas);
+  return responderJson(ventas);
 }

@@ -1,5 +1,6 @@
 import { verificarPermiso } from "@/lib/auth/verificarPermiso";
 import { prisma } from "@/lib/db/client";
+import { responderJson } from "@/lib/utils";
 import { validarProducto } from "@/lib/producto/validaciones";
 import { validarReglasProducto } from "@/lib/producto/reglas";
 import { respuestaErrorAutorizacion } from "@/lib/auth/errores";
@@ -43,5 +44,5 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     data,
   });
 
-  return Response.json(producto);
+  return responderJson(producto);
 }

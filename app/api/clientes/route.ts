@@ -1,5 +1,6 @@
 import { verificarPermiso } from "@/lib/auth/verificarPermiso";
 import { prisma } from "@/lib/db/client";
+import { responderJson } from "@/lib/utils";
 import { validarCliente } from "@/lib/cliente/validaciones";
 import { validarReglasCliente } from "@/lib/cliente/reglas";
 import { respuestaErrorAutorizacion } from "@/lib/auth/errores";
@@ -48,5 +49,5 @@ export async function POST(req: Request) {
     },
   });
 
-  return Response.json(cliente);
+  return responderJson(cliente, 201);
 }

@@ -1,5 +1,6 @@
 import { verificarPermiso } from "@/lib/auth/verificarPermiso";
 import { prisma } from "@/lib/db/client";
+import { responderJson } from "@/lib/utils";
 import { validarProducto } from "@/lib/producto/validaciones";
 import { validarReglasProducto } from "@/lib/producto/reglas";
 import { respuestaErrorAutorizacion } from "@/lib/auth/errores";
@@ -17,11 +18,7 @@ export async function GET() {
     orderBy: { id: "asc" }
   });
 
-  return Response.json(productos.map(({ id, categoriaid, ...producto }) => ({
-    ...producto,
-    id: Number(id),
-    categoriaid: Number(categoriaid),
-  })));
+  return responderJson(productos);
 }
 
 export async function POST(req: Request) {
@@ -70,5 +67,5 @@ export async function POST(req: Request) {
     },
   });
 
-  return Response.json(producto);
+  return responderJson(producto, 201);
 }

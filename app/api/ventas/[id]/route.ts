@@ -1,5 +1,6 @@
 import { verificarPermiso } from "@/lib/auth/verificarPermiso";
 import { prisma } from "@/lib/db/client";
+import { responderJson } from "@/lib/utils";
 import { respuestaErrorAutorizacion } from "@/lib/auth/errores";
 
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -17,8 +18,8 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   });
 
   if (!venta) {
-    return new Response("Venta no encontrada", { status: 404 });
+    return Response.json({ error: "Venta no encontrada" }, { status: 404 });
   }
 
-  return Response.json(venta);
+  return responderJson(venta);
 }
