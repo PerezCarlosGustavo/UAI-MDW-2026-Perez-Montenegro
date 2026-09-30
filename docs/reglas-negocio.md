@@ -29,24 +29,23 @@ Este documento describe todas las validaciones de forma y reglas de negocio apli
 - No se puede desactivar un cliente con movimientos pendientes
 
 ## 3. Ventas
-### Validaciones de forma (400)
-- Debe tener al menos un detalle
-- tipopago obligatorio
+### Validaciones de forma (400) — `lib/schemas/venta.ts`
+- Debe tener al menos un producto
+- tipopago obligatorio: 0 (contado) o 1 (cuenta corriente)
 - cantidad > 0
-- preciounitario > 0
-- subtotal > 0
-- total > 0
+- El cliente solo manda producto y cantidad; precio, subtotal y total no se aceptan del body
 
-### Reglas de negocio (409)
-- Cliente debe existir (si se envía)
-- Producto debe existir
-- Producto debe estar activo
-- Subtotal debe ser coherente: cantidad * preciounitario
-- Total debe ser la suma de subtotales
-- Si permitestock = true → stock debe ser suficiente
-- Stock se descuenta al confirmar la venta
-- VENDEDOR solo puede crear ventas propias
-- ADMIN puede crear ventas para cualquier usuario
+### Reglas de negocio (409) — `lib/venta/reglas.ts` (función pura, con tests)
+- Cliente debe existir y estar activo (si se envía)
+- Producto debe existir y estar activo
+- El precio unitario es el `preciolista` del catálogo al momento de la venta
+- Solo se descuenta stock si `permitestock = true`
+- Stock insuficiente NO bloquea la venta (ADR 0004): queda negativo y se devuelve una advertencia
+- La venta y el descuento de stock van en una transacción
+- La venta queda siempre a nombre del usuario de la sesión
+
+### Pertenencia
+- VENDEDOR solo ve sus ventas; ADMIN ve todas (ver `docs/permisos.md`)
 
 ## 4. Cuenta Corriente
 ### Reglas de negocio (409)
