@@ -36,11 +36,12 @@ Formato: **Como** <rol>, **quiero** <acción>, **para** <beneficio>.
 Cada historia lleva su criterio de aceptación: cómo se verifica que está terminada.
 
 ### H1 — Autenticación y control de acceso
-**Como** *usuario*, **quiero** iniciar sesión con correo y contraseña, **para** acceder a las funcionalidades de mi rol.
+**Como** *usuario*, **quiero** iniciar sesión con mi cuenta de Google, **para** acceder a las funcionalidades de mi rol. (Decisión en ADR 0007.)
 
 Criterios de aceptación:
-- [ ] Dado un usuario registrado con credenciales válidas, cuando ingresa email y contraseña correctos, entonces el sistema inicia sesión y redirige al Dashboard/POS según su rol.
-- [ ] Caso de error: cuando se ingresan credenciales inválidas o se intenta ingresar a una ruta protegida sin sesión, el sistema muestra un mensaje de error claro o redirige al login denegando el acceso en el servidor.
+- [ ] Dado un usuario que entra por primera vez con Google, el sistema lo registra con rol PENDIENTE y le muestra que su cuenta espera aprobación; con ese rol toda la API responde 403. Solo un ADMIN puede asignarle otro rol.
+- [ ] Dado un usuario registrado y activo, cuando inicia sesión con Google, el sistema lo redirige al POS con los permisos de su rol.
+- [ ] Caso de error: cuando se intenta usar la API sin sesión, responde 401; con un rol sin permiso, 403. Un usuario desactivado deja de estar autenticado.
 
 #### H2 — CRUD de Productos y Alerta de Stock
 **Como** *administrador*, **quiero** registrar, editar y actualizar productos indicando si gestionan stock o no, **para** mantener el catálogo ordenado y controlar el inventario de los artículos empaquetados.

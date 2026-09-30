@@ -84,12 +84,24 @@ model producto {
   @@index([categoriaid], map: "ix_producto_categoriaid")
 }
 
+// Enum y no String: con String la base acepta "admin", "Admin" o cualquier
+// cosa, y la comparación de roles en el código falla sin avisar.
+//
+// PENDIENTE es el rol con el que entra cualquiera que se loguea por primera
+// vez: no tiene ningún permiso hasta que un ADMIN le asigna otro rol. La URL
+// es pública, así que tener cuenta de Google no alcanza para operar.
+enum Rol {
+  ADMIN
+  VENDEDOR
+  PENDIENTE
+}
+
 model usuario {
   id      BigInt  @id @default(autoincrement())
   nombre  String  @db.VarChar(150)
   usuario String  @unique @db.VarChar(100)
-  email   String  @unique 
-  rol     String  @default("VENDEDOR")
+  email   String  @unique
+  rol     Rol     @default(PENDIENTE)
   activo  Boolean @default(true)
   venta   venta[]
 }

@@ -1,17 +1,28 @@
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { obtenerUsuario } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { listarProductos } from "@/lib/productos";
 
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
-  const session = await getServerSession(authOptions);
+  const usuario = await obtenerUsuario();
 
-  if (!session) {
+  if (!usuario) {
     redirect("/signin");
   }
 
+  // Un PENDIENTE tiene sesión pero ningún permiso: no ve datos del sistema.
+  if (usuario.rol === "PENDIENTE") {
+    return (
+      <main className="mx-auto max-w-2xl p-8">
+        <h1 className="text-2xl font-bold">Cuenta pendiente de aprobación</h1>
+        <p className="mt-4 text-sm opacity-80">
+          Ya estás registrado como {usuario.email}. Un administrador tiene que
+          asignarte un rol antes de que puedas usar el sistema.
+        </p>
+      </main>
+    );
+  }
 
   let productos: Awaited<ReturnType<typeof listarProductos>> | null = null;
 
