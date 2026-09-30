@@ -93,13 +93,36 @@ Actualiza un producto.
 }
 ```
 ### Respuesta 200
-```json
-{ "ok": true }
-```
+El producto actualizado.
+
 ### Errores
 - 404 → Producto inexistente
 - 400 → Validación de forma
 - 409 → Reglas de negocio
+
+## GET /api/productos/:id
+Un producto (activo o no).
+
+### Roles
+- ADMIN ✓
+- VENDEDOR ✓
+
+### Errores
+- 400 → id no numérico
+- 404 → Producto inexistente
+
+## DELETE /api/productos/:id
+Baja lógica: pone `activo = false`. El producto deja de aparecer en el catálogo y no se puede vender, pero la fila queda porque hay ventas que lo referencian.
+
+### Roles
+- ADMIN ✓
+- VENDEDOR ✗ → 403
+
+### Respuesta 200
+El producto con `activo: false`.
+
+### Errores
+- 404 → Producto inexistente
 
 # 3. Categorías
 ## GET /api/categorias
@@ -113,7 +136,18 @@ Roles: ADMIN ✓
 
 # 4. Clientes
 ## GET /api/clientes
+Clientes activos, ordenados por nombre (máximo 200).
+
 Roles: ADMIN ✓ / VENDEDOR ✓
+
+## GET /api/clientes/:id
+Un cliente (activo o no).
+
+Roles: ADMIN ✓ / VENDEDOR ✓
+
+### Errores
+- 400 → id no numérico
+- 404 → Cliente inexistente
 
 ## POST /api/clientes
 Roles: ADMIN ✓ / VENDEDOR ✓
@@ -139,6 +173,15 @@ Roles: ADMIN ✓
 - 404 → Cliente inexistente
 - 409 → Documento duplicado
 - 409 → No se puede desactivar cliente con movimientos
+
+## DELETE /api/clientes/:id
+Baja lógica: pone `activo = false`. El cliente no puede comprar, pero la fila queda por sus ventas y su cuenta corriente.
+
+Roles: ADMIN ✓ / VENDEDOR ✗ → 403
+
+### Errores
+- 404 → Cliente inexistente
+- 409 → El cliente tiene movimientos en cuenta corriente
 
 # 5. Ventas
 ## GET/api/ventas
@@ -305,9 +348,13 @@ Liquida deuda por monto entregado.
 |GET /api/productos|✓|✓|✗|
 |POST /api/productos|✓|✗|✗|
 |PUT /api/productos/:id|✓|✗|✗|
+|GET /api/productos/:id|✓|✓|✗|
+|DELETE /api/productos/:id|✓|✗|✗|
 |GET /api/clientes|✓|✓|✗|
 |POST /api/clientes|✓|✓|✗|
-|PUT /api/clientes/:id|✓|✓|✗|
+|PUT /api/clientes/:id|✓|✗|✗|
+|GET /api/clientes/:id|✓|✓|✗|
+|DELETE /api/clientes/:id|✓|✗|✗|
 |GET /api/ventas|✓|✓|✗|
 |GET /api/ventas/mias|✓|✓|✗|
 |POST /api/ventas|✓|✓|✗|
