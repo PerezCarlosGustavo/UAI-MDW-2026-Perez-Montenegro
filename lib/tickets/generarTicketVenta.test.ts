@@ -24,7 +24,10 @@ describe("generarTicketVentaPdf", () => {
     try {
       expect(Buffer.isBuffer(buffer)).toBe(true);
       expect(buffer.length).toBeGreaterThan(0);
-      expect(subirPdf).not.toHaveBeenCalled();
+      expect(subirPdf).toHaveBeenCalledWith({
+        pdfBuffer: buffer,
+        ventaId: "123",
+      });
 
       const filePath = path.join(dir, "ticket-venta-123.pdf");
       const exists = await fs
