@@ -1,8 +1,8 @@
 import { verificarPermiso } from "@/lib/auth/verificarPermiso";
 import { prisma } from "@/lib/db/client";
 import { responderJson } from "@/lib/utils";
-import { validarVenta } from "@/lib/venta/validaciones";
-import { validarReglasVenta } from "@/lib/venta/reglas";
+import { armarVenta } from "@/lib/venta/reglas";
+import { buscarClienteParaVenta, buscarProductosParaVenta, registrarVenta } from "@/lib/db/ventas";
 import { responderError } from "@/lib/errores";
 import { generarTicketVentaPdf } from "@/lib/tickets/generarTicketVenta";
 import { crearVentaSchema } from "@/lib/schemas/venta";
@@ -34,68 +34,34 @@ export async function POST(req: Request) {
         { status: 400 }
       );
     }
-    const data = resultado.data;
+    const pedido = resultado.data;
 
-    // Validaciones de forma
-    const validacion = validarVenta(data);
-    if (!validacion.ok) {
-      return Response.json(
-        { error: "Validación fallida", detalles: validacion.errores },
-        { status: 400 }
-      );
-    }
+    // Se buscan los datos que las reglas necesitan; las reglas no consultan.
+    const idsProductos = [...new Set(pedido.detalles.map((d) => d.productoid))];
+    const [productos, cliente] = await Promise.all([
+      buscarProductosParaVenta(idsProductos),
+      pedido.clienteid ? buscarClienteParaVenta(pedido.clienteid) : Promise.resolve(undefined),
+    ]);
 
-    // Validaciones de negocio
-    const reglas = await validarReglasVenta(data);
-    if (!reglas.ok) {
+    const armada = armarVenta(pedido, productos, cliente);
+    if (!armada.ok) {
       return Response.json(
-        { error: "Reglas de negocio fallidas", detalles: reglas.errores },
+        { error: "Reglas de negocio fallidas", detalles: armada.errores },
         { status: 409 }
       );
     }
 
-    // Crear venta
-    const venta = await prisma.venta.create({
-      data: {
-        clienteid: data.clienteid ? BigInt(data.clienteid) : null,
-        usuarioid: usuario.id,
-        tipopago: data.tipopago,
-        total: data.total,
-        detalleventa: {
-          create: data.detalles.map((d) => ({
-            productoid: BigInt(d.productoid),
-            cantidad: d.cantidad,
-            preciounitario: d.preciounitario,
-            subtotal: d.subtotal,
-          })),
-        },
-      },
-      include: { detalleventa: true },
+    const venta = await registrarVenta({
+      clienteid: pedido.clienteid ?? null,
+      usuarioid: usuario.id,
+      tipopago: pedido.tipopago,
+      total: armada.total,
+      lineas: armada.lineas,
+      descuentosDeStock: armada.descuentosDeStock,
     });
-
-    // Actualizar stock
-    for (const d of data.detalles) {
-      await prisma.producto.update({
-        where: { id: BigInt(d.productoid) },
-        data: {
-          stockactual: {
-            decrement: d.cantidad,
-          },
-        },
-      });
-    }
-
-    const idsProductos = venta.detalleventa.map((detalle) => detalle.productoid);
-    const productos = await prisma.producto.findMany({
-      where: { id: { in: idsProductos } },
-    });
-
-    const nombresPorProducto = new Map(
-      productos.map((producto) => [producto.id.toString(), producto.nombre])
-    );
 
     const detalleTicket = venta.detalleventa.map((detalle) => ({
-      nombre: nombresPorProducto.get(detalle.productoid.toString()) ?? "Producto",
+      nombre: detalle.producto.nombre,
       cantidad: Number(detalle.cantidad),
       subtotal: Number(detalle.subtotal),
     }));
@@ -106,7 +72,9 @@ export async function POST(req: Request) {
       total: Number(venta.total),
     });
 
-    return responderJson(venta, 201);
+    // Las advertencias (stock que quedó negativo) viajan con la venta para
+    // que la pantalla las muestre sin frenar la caja.
+    return responderJson({ ...venta, advertencias: armada.advertencias }, 201);
   } catch (error) {
     return responderError("POST /api/ventas", error);
   }
