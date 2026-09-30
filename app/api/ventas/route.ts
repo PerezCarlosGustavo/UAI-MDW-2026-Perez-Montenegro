@@ -1,19 +1,31 @@
 import { verificarPermiso } from "@/lib/auth/verificarPermiso";
-import { prisma } from "@/lib/db/client";
 import { responderJson } from "@/lib/utils";
 import { armarVenta } from "@/lib/venta/reglas";
-import { buscarClienteParaVenta, buscarProductosParaVenta, registrarVenta } from "@/lib/db/ventas";
+import {
+  buscarClienteParaVenta,
+  buscarProductosParaVenta,
+  listarVentasVisiblesPara,
+  registrarVenta,
+} from "@/lib/db/ventas";
 import { responderError } from "@/lib/errores";
 import { generarTicketVentaPdf } from "@/lib/tickets/generarTicketVenta";
-import { crearVentaSchema } from "@/lib/schemas/venta";
+import { crearVentaSchema, listarVentasQuerySchema } from "@/lib/schemas/venta";
 
-export async function GET() {
+// GET /api/ventas?pagina=N → ADMIN ve todas; VENDEDOR, solo las suyas.
+export async function GET(req: Request) {
   try {
-    await verificarPermiso("venta", "ver");
+    const usuario = await verificarPermiso("venta", "ver");
 
-    const ventas = await prisma.venta.findMany({
-      include: { detalleventa: true, cliente: true, usuario: true },
-    });
+    const query = Object.fromEntries(new URL(req.url).searchParams);
+    const resultado = listarVentasQuerySchema.safeParse(query);
+    if (!resultado.success) {
+      return Response.json(
+        { error: "Validación fallida", detalles: resultado.error.issues.map((issue) => issue.message) },
+        { status: 400 }
+      );
+    }
+
+    const ventas = await listarVentasVisiblesPara(usuario, resultado.data.pagina);
 
     return responderJson(ventas);
   } catch (error) {

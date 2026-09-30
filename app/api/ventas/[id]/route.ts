@@ -1,18 +1,17 @@
 import { verificarPermiso } from "@/lib/auth/verificarPermiso";
-import { prisma } from "@/lib/db/client";
+import { obtenerVentaVisiblePara } from "@/lib/db/ventas";
 import { responderJson } from "@/lib/utils";
 import { responderError } from "@/lib/errores";
 
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    await verificarPermiso("venta", "ver");
+    const usuario = await verificarPermiso("venta", "ver");
 
     const { id } = await params;
 
-    const venta = await prisma.venta.findUnique({
-      where: { id: BigInt(id) },
-      include: { detalleventa: true, cliente: true, usuario: true },
-    });
+    // Si es de otro vendedor la consulta no la encuentra y responde 404, igual
+    // que si no existiera: 403 confirmaría que esa venta existe.
+    const venta = await obtenerVentaVisiblePara(BigInt(id), usuario);
 
     if (!venta) {
       return Response.json({ error: "Venta no encontrada" }, { status: 404 });
