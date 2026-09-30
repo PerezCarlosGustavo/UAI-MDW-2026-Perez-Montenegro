@@ -1,6 +1,7 @@
 import { getServerSession } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import type { NextAuthOptions } from "next-auth";
+import type { Rol } from "@prisma/client";
 import { prisma } from "@/lib/db/client";
 import { ErrorAutorizacion } from "@/lib/auth/errores";
 
@@ -13,11 +14,14 @@ export const authOptions: NextAuthOptions = {
   ],
 
   callbacks: {
-    async signIn({ user }: { user: { email?: string | null; name?: string | null } }) {
+    async signIn({ user }) {
       if (!user.email) {
         return false;
       }
 
+      // Todo usuario nuevo entra como VENDEDOR, el rol con menos permisos.
+      // `update` queda vacío a propósito: si ya existe, loguearse no le
+      // cambia el rol. ADMIN se asigna solo desde la base (ver seed).
       await prisma.usuario.upsert({
         where: { email: user.email },
         update: {},
@@ -32,7 +36,10 @@ export const authOptions: NextAuthOptions = {
       return true;
     },
 
-    async jwt({ token }: { token: { email?: string | null; id?: number; rol?: "ADMIN" | "VENDEDOR"; nombre?: string } }) {
+    // Corre en cada request que lee la sesión. Consultamos la base en vez de
+    // confiar en lo que quedó guardado en el token, así un cambio de rol se
+    // aplica sin tener que cerrar sesión (ver ADR 0007).
+    async jwt({ token }) {
       if (!token.email) {
         return token;
       }
@@ -41,20 +48,25 @@ export const authOptions: NextAuthOptions = {
         where: { email: token.email },
       });
 
-      if (usuario) {
+      if (usuario && usuario.activo) {
         token.id = Number(usuario.id);
-        token.rol = usuario.rol as "ADMIN" | "VENDEDOR";
+        token.rol = usuario.rol;
         token.nombre = usuario.nombre;
+      } else {
+        // Si lo borraron o lo desactivaron, el token deja de identificar a
+        // alguien y obtenerUsuario devuelve null.
+        delete token.id;
+        delete token.rol;
       }
 
       return token;
     },
 
     async session({ session, token }) {
-      if (session.user) {
-        session.user.id = Number(token.id ?? 0);
-        session.user.rol = (token.rol as "ADMIN" | "VENDEDOR") ?? "VENDEDOR";
-        session.user.nombre = (token.nombre as string) ?? "";
+      if (session.user && token.id && token.rol) {
+        session.user.id = token.id;
+        session.user.rol = token.rol;
+        session.user.nombre = token.nombre ?? "";
       }
 
       return session;
@@ -66,7 +78,9 @@ export const authOptions: NextAuthOptions = {
 export async function obtenerUsuario() {
   const session = await getServerSession(authOptions);
 
-  if (!session?.user) {
+  // Sin id no hay usuario válido. Antes se completaba con id 0 y rol
+  // VENDEDOR, y eso dejaba pasar una sesión que no correspondía a nadie.
+  if (!session?.user?.id) {
     return null;
   }
 
@@ -78,7 +92,7 @@ export async function obtenerUsuario() {
   };
 }
 
-export async function requerirUsuario(rol?: "ADMIN" | "VENDEDOR") {
+export async function requerirUsuario(rol?: Rol) {
   const usuario = await obtenerUsuario();
 
   if (!usuario) {
