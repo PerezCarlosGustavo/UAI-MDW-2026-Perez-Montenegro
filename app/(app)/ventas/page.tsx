@@ -152,7 +152,6 @@ export default function VentasPage() {
     try {
       const payload = {
         clienteid: form.clienteid ? Number(form.clienteid) : null,
-        usuarioid: 1, // ID de usuario ficticio
         tipopago: Number(form.tipopago || 0),
         total: Number(totalVenta.toFixed(2)),
         detalles: form.detalles.map((detalle) => ({

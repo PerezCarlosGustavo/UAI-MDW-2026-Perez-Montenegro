@@ -1,5 +1,4 @@
 import { verificarPermiso } from "@/lib/auth/verificarPermiso";
-import { requerirUsuario } from "@/app/api/auth/auth";
 import { prisma } from "@/lib/db/client";
 import { responderJson } from "@/lib/utils";
 import { validarVenta } from "@/lib/venta/validaciones";
@@ -24,9 +23,9 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
-    await verificarPermiso("venta", "crear");
-
-    const usuario = await requerirUsuario(); // ADMIN o VENDEDOR
+    // El usuario sale de la sesión, nunca del body: la venta queda a nombre
+    // de quien la registra.
+    const usuario = await verificarPermiso("venta", "crear");
 
     const resultado = crearVentaSchema.safeParse(await req.json());
     if (!resultado.success) {
@@ -54,7 +53,6 @@ export async function POST(req: Request) {
         { status: 409 }
       );
     }
-    console.log(data, usuario);
 
     // Crear venta
     const venta = await prisma.venta.create({
@@ -86,7 +84,7 @@ export async function POST(req: Request) {
         },
       });
     }
-  console.log("Venta creada con ID:", venta);
+
     const idsProductos = venta.detalleventa.map((detalle) => detalle.productoid);
     const productos = await prisma.producto.findMany({
       where: { id: { in: idsProductos } },
