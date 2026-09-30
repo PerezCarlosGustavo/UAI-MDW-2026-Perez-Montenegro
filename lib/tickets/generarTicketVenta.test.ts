@@ -1,11 +1,11 @@
 import { describe, expect, it, vi } from "vitest";
 import { promises as fs } from "node:fs";
 import path from "node:path";
-import { subirTicketVentaSupabase } from "@/lib/services/supabaseBucket";
+import { subirTicket } from "@/lib/services/storageService";
 import { generarTicketVentaPdf } from "./generarTicketVenta";
 
-vi.mock("@/lib/services/supabaseBucket", () => ({
-  subirTicketVentaSupabase: vi.fn().mockResolvedValue({}),
+vi.mock("@/lib/services/storageService", () => ({
+  subirTicket: vi.fn().mockResolvedValue({}),
 }));
 
 describe("generarTicketVentaPdf", () => {
@@ -24,6 +24,10 @@ describe("generarTicketVentaPdf", () => {
     try {
       expect(Buffer.isBuffer(buffer)).toBe(true);
       expect(buffer.length).toBeGreaterThan(0);
+      expect(subirTicket).toHaveBeenCalledWith({
+        pdfBuffer: buffer,
+        ventaId: "123",
+      });
 
       const filePath = path.join(dir, "ticket-venta-123.pdf");
       const exists = await fs
