@@ -36,7 +36,7 @@ export default async function UsuariosPage() {
         {usuarios.map((u) => (
           <li
             key={String(u.id)}
-            className={`rounded-lg border p-4 ${u.rol === "PENDIENTE" ? "border-amber-300 bg-amber-50" : ""}`}
+            className={`rounded-lg border p-4 ${u.rol === "PENDIENTE" ? "border-amber-400 bg-amber-50 text-slate-900 dark:border-amber-600 dark:bg-amber-950 dark:text-amber-50" : ""}`}
           >
             <p className="font-medium">{u.nombre || u.email}</p>
             <p className="mb-3 text-sm opacity-70">{u.email}</p>

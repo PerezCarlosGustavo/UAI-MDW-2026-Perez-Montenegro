@@ -57,7 +57,7 @@ export default function CambiarRolUsuario({ id, rol, activo, esUnoMismo }: Props
           value={rolElegido}
           onChange={(evento) => setRolElegido(evento.target.value as Props["rol"])}
           disabled={esUnoMismo || guardando}
-          className="rounded border border-slate-300 px-2 py-1"
+          className="rounded border border-slate-400 bg-white px-2 py-1 text-slate-900 dark:border-slate-500 dark:bg-slate-800 dark:text-slate-100"
         >
           {ROLES.map((opcion) => (
             <option key={opcion} value={opcion}>
@@ -86,9 +86,9 @@ export default function CambiarRolUsuario({ id, rol, activo, esUnoMismo }: Props
         {guardando ? "Guardando..." : "Guardar"}
       </button>
 
-      {esUnoMismo ? <span className="text-xs text-slate-500">(sos vos)</span> : null}
+      {esUnoMismo ? <span className="text-xs opacity-80">(sos vos)</span> : null}
       {error ? (
-        <p role="alert" className="w-full text-sm text-red-700">
+        <p role="alert" className="w-full text-sm text-red-700 dark:text-red-400">
           Error: {error}
         </p>
       ) : null}
