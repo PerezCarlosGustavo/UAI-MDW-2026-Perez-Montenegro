@@ -3,10 +3,6 @@ import type { CrearVentaInput } from "@/lib/schemas/venta";
 export function validarVenta(data: CrearVentaInput) {
   const errores: string[] = [];
 
-  if (!data.tipopago) {
-    errores.push("El tipo de pago es obligatorio.");
-  }
-
   if (!Array.isArray(data.detalles) || data.detalles.length === 0) {
     errores.push("La venta debe tener al menos un detalle.");
   }
