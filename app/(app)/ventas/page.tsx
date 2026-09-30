@@ -47,6 +47,7 @@ export default function VentasPage() {
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [mensaje, setMensaje] = useState<string | null>(null);
+  const [advertencias, setAdvertencias] = useState<string[]>([]);
   const [form, setForm] = useState({
     clienteid: "",
     tipopago: "0",
@@ -148,17 +149,16 @@ export default function VentasPage() {
     setGuardando(true);
     setError(null);
     setMensaje(null);
+    setAdvertencias([]);
 
     try {
+      // Solo qué y cuánto: precios y total los calcula el servidor.
       const payload = {
         clienteid: form.clienteid ? Number(form.clienteid) : null,
         tipopago: Number(form.tipopago || 0),
-        total: Number(totalVenta.toFixed(2)),
         detalles: form.detalles.map((detalle) => ({
           productoid: Number(detalle.productoid),
           cantidad: Number(detalle.cantidad),
-          preciounitario: Number(detalle.preciounitario),
-          subtotal: Number(detalle.subtotal),
         })),
       };
 
@@ -173,10 +173,15 @@ export default function VentasPage() {
       const result = await response.json();
 
       if (!response.ok) {
-        throw new Error(result?.detalles ? JSON.stringify(result.detalles) : result?.error || "No se pudo registrar la venta");
+        throw new Error(
+          Array.isArray(result?.detalles)
+            ? result.detalles.join(" ")
+            : result?.error || "No se pudo registrar la venta"
+        );
       }
 
       setMensaje(`Venta registrada correctamente con ID ${result.id ?? "n/d"}.`);
+      setAdvertencias(Array.isArray(result.advertencias) ? result.advertencias : []);
       setForm({
         clienteid: "",
         tipopago: "0",
@@ -194,8 +199,8 @@ export default function VentasPage() {
     <main className="mx-auto max-w-6xl space-y-8 p-8">
       <header className="flex items-center justify-between gap-4">
         <div>
-          <p className="text-sm uppercase tracking-[0.2em] text-slate-500">Punto de venta</p>
-          <h1 className="text-3xl font-bold text-slate-900">Ventas</h1>
+          <p className="text-sm uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">Punto de venta</p>
+          <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-100">Ventas</h1>
         </div>
         <div className="rounded-full bg-slate-100 px-4 py-2 text-sm font-medium text-slate-700">
           Total en esta venta: ${totalVenta.toFixed(2)}
@@ -214,8 +219,23 @@ export default function VentasPage() {
         </div>
       ) : null}
 
+      {/* Stock negativo: la venta se hizo igual (ADR 0004), pero se avisa
+          para que el administrador ajuste el inventario. */}
+      {advertencias.length > 0 ? (
+        <div role="status" className="rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900">
+          <p className="font-medium">Atención:</p>
+          <ul className="mt-1 list-disc pl-5">
+            {advertencias.map((advertencia) => (
+              <li key={advertencia}>{advertencia}</li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+
       <section className="grid gap-8 lg:grid-cols-[1.4fr_0.8fr]">
-        <form onSubmit={enviarVenta} className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        {/* text-slate-900 explícito: con el sistema en modo oscuro el texto
+            heredado es claro y sobre el fondo blanco no se leía. */}
+        <form onSubmit={enviarVenta} className="rounded-2xl border border-slate-200 bg-white p-6 text-slate-900 shadow-sm">
           <div className="mb-5 grid gap-4 md:grid-cols-2">
             <label className="text-sm font-medium text-slate-700">
               Cliente ID (opcional)
@@ -285,13 +305,12 @@ export default function VentasPage() {
 
                 <label className="text-sm font-medium text-slate-700">
                   Precio unit.
+                  {/* Solo lectura: el servidor cobra el precio de lista del
+                      catálogo, así que editarlo acá no tendría efecto. */}
                   <input
-                    type="number"
-                    min="0"
-                    step="0.01"
                     value={detalle.preciounitario}
-                    onChange={(event) => actualizarDetalle(index, "preciounitario", event.target.value)}
-                    className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 outline-none transition focus:border-slate-500"
+                    readOnly
+                    className="mt-1 w-full rounded-lg border border-slate-200 bg-slate-100 px-3 py-2 text-slate-600"
                   />
                 </label>
 
@@ -328,7 +347,7 @@ export default function VentasPage() {
           </div>
         </form>
 
-        <aside className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <aside className="rounded-2xl border border-slate-200 bg-white p-6 text-slate-900 shadow-sm">
           <h2 className="mb-4 text-lg font-semibold text-slate-900">Ventas recientes</h2>
 
           {loading ? (
