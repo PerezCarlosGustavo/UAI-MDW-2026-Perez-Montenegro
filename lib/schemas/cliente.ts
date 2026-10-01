@@ -10,12 +10,14 @@ const camposClienteSchema = z.object({
     .string()
     .trim()
     .max(30, "El documento no puede superar los 30 caracteres")
+    .refine((valor) => valor.trim().length > 0, "El documento, si se informa, no puede quedar vacío.")
     .optional()
     .nullable(),
   telefono: z
     .string()
     .trim()
     .max(50, "El teléfono no puede superar los 50 caracteres")
+    .refine((valor) => valor.trim().length === 0 || valor.trim().length >= 6, "El teléfono es inválido.")
     .optional()
     .nullable(),
 });

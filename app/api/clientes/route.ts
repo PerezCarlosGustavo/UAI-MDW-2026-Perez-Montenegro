@@ -1,18 +1,29 @@
 import { verificarPermiso } from "@/lib/auth/verificarPermiso";
-import { crearCliente, listarClientesActivos } from "@/lib/db/clientes";
+import { crearCliente } from "@/lib/db/clientes";
 import { responderJson } from "@/lib/utils";
 import { validarCliente } from "@/lib/cliente/validaciones";
 import { validarReglasCliente } from "@/lib/cliente/reglas";
 import { responderError } from "@/lib/errores";
 import { crearClienteSchema } from "@/lib/schemas/cliente";
+import { prisma } from "@/lib/db/client";
 
-// GET /api/clientes → clientes activos (ADMIN y VENDEDOR, para elegirlos al
-// vender o fiar).
-export async function GET() {
+// GET /api/clientes → GetAll de clientes con id y nombre.
+export async function GET(req: Request) {
   try {
     await verificarPermiso("cliente", "ver");
 
-    const clientes = await listarClientesActivos();
+    const url = new URL(req.url);
+    const incluirInactivos = url.searchParams.get("incluirInactivos") === "true";
+
+    const clientes = await prisma.cliente.findMany({
+      where: incluirInactivos ? {} : { activo: true },
+      orderBy: { nombre: "asc" },
+      select: {
+        id: true,
+        nombre: true,
+      },
+      take: 200,
+    });
 
     return responderJson(clientes);
   } catch (error) {
