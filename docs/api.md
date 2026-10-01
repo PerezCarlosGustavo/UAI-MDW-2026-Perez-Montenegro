@@ -323,6 +323,44 @@ Liquida deuda por monto entregado.
 }
 ```
 
+# 8b. Usuarios (ABM, solo ADMIN)
+Quien entra por primera vez con Google queda con rol `PENDIENTE` y no puede usar ningún endpoint (403) hasta que un ADMIN le asigne un rol desde acá.
+
+## GET /api/usuarios
+Lista usuarios (máximo 50, los más nuevos primero).
+
+Query opcional: `?rol=PENDIENTE` (o `ADMIN`, `VENDEDOR`).
+
+### Roles
+- ADMIN ✓
+- VENDEDOR / PENDIENTE ✗ → 403
+- Sin sesión ✗ → 401
+
+### Respuesta 200
+```json
+[
+  { "id": 4, "nombre": "Juana", "email": "juana@gmail.com", "rol": "PENDIENTE", "activo": true }
+]
+```
+### Errores
+- 400 → rol inválido en la query
+
+## PATCH /api/usuarios/:id
+Asigna rol y/o activa/desactiva un usuario. Solo se pueden mandar `rol` y `activo`.
+
+### Body
+```json
+{ "rol": "VENDEDOR", "activo": true }
+```
+### Respuesta 200
+El usuario actualizado (mismo formato que en la lista).
+
+### Errores
+- 400 → body vacío, rol inexistente o campos que no se pueden cambiar (ej. `email`)
+- 403 → quien llama no es ADMIN
+- 404 → el usuario no existe
+- 409 → un ADMIN intenta quitarse el rol o desactivarse a sí mismo
+
 # 9. Errores globales
 ### 400 — Error de validación
 ```json
@@ -368,3 +406,7 @@ Liquida deuda por monto entregado.
 |POST /api/ventas|✓|✓|✗|
 |POST /api/cuentacorriente/:id/movimientos|✓|✓|✗|
 |POST /api/cobranza|✓|✓|✗|
+|GET /api/usuarios|✓|✗|✗|
+|PATCH /api/usuarios/:id|✓|✗|✗|
+
+El rol `PENDIENTE` no tiene acceso a ningún endpoint (403 en todos).

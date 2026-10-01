@@ -22,6 +22,16 @@ Este documento describe la matriz de permisos, los roles del sistema, y las regl
 - No puede editar clientes
 - No puede eliminar recursos
 
+### PENDIENTE
+- Es el rol con el que entra cualquiera que se loguea por primera vez (la URL es pública).
+- No tiene ningún permiso: todos los endpoints le responden 403 y la home le muestra que su cuenta espera aprobación.
+- Un ADMIN le asigna VENDEDOR (o lo desactiva) desde `/usuarios`.
+
+### Cómo se asignan los roles
+- El primer ADMIN se crea con `ADMIN_EMAIL` en el seed.
+- Todos los demás cambios de rol los hace un ADMIN desde el ABM de usuarios.
+- Un ADMIN no puede quitarse el rol ni desactivarse a sí mismo (409), para que el sistema nunca quede sin nadie que apruebe usuarios.
+
 ## 2. Matriz de permisos
 ```ts
 {
@@ -40,6 +50,10 @@ Este documento describe la matriz de permisos, los roles del sistema, y las regl
   venta: {
     crear: ["ADMIN", "VENDEDOR"],
     ver: ["ADMIN", "VENDEDOR"]
+  },
+  usuario: {
+    ver: ["ADMIN"],
+    editar: ["ADMIN"]
   }
 }
 ```

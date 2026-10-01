@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { obtenerUsuario } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { listarProductos } from "@/lib/productos";
@@ -16,11 +17,10 @@ export default async function Home() {
   if (usuario.rol === "PENDIENTE") {
     return (
       <main className="mx-auto max-w-2xl p-8">
-        <UsuarioActual usuario={usuario} />
-        <h1 className="mt-8 text-2xl font-bold">Cuenta pendiente de aprobación</h1>
+        <h1 className="text-2xl font-bold">Cuenta pendiente de aprobación</h1>
         <p className="mt-4 text-sm opacity-80">
-          Ya estás registrado. Un administrador tiene que asignarte un rol antes
-          de que puedas usar el sistema.
+          Ya estás registrado como {usuario.email}. Un administrador tiene que
+          asignarte un rol antes de que puedas usar el sistema.
         </p>
       </main>
     );
@@ -44,6 +44,13 @@ export default async function Home() {
         <li>Carlos Gustavo Perez</li>
         <li>Leandro Jonatan Montenegro</li>
       </ul>
+
+      <nav className="mt-6 flex gap-4 text-sm">
+        <Link href="/ventas" className="underline">Ventas</Link>
+        {usuario.rol === "ADMIN" ? (
+          <Link href="/usuarios" className="underline">Usuarios</Link>
+        ) : null}
+      </nav>
 
       {productos === null ? (
         <section className="mt-8 rounded-lg border border-dashed p-6">
