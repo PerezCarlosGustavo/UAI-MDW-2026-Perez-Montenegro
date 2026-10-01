@@ -12,6 +12,11 @@ type Producto = {
   codigobarra?: string | null;
 };
 
+type ClienteResumen = {
+  id: string | number;
+  nombre: string;
+};
+
 type DetalleForm = {
   productoid: string;
   cantidad: string;
@@ -42,6 +47,7 @@ const detalleBase: DetalleForm = {
 
 export default function VentasPage() {
   const [productos, setProductos] = useState<Producto[]>([]);
+  const [clientes, setClientes] = useState<ClienteResumen[]>([]);
   const [ventas, setVentas] = useState<Venta[]>([]);
   const [loading, setLoading] = useState(true);
   const [guardando, setGuardando] = useState(false);
@@ -59,8 +65,9 @@ export default function VentasPage() {
     setError(null);
 
     try {
-      const [productosRes, ventasRes] = await Promise.all([
+      const [productosRes, clientesRes, ventasRes] = await Promise.all([
         fetch("/api/productos"),
+        fetch("/api/clientes?incluirInactivos=true"),
         fetch("/api/ventas"),
       ]);
 
@@ -68,14 +75,20 @@ export default function VentasPage() {
         throw new Error("No se pudieron cargar los productos");
       }
 
+      if (!clientesRes.ok) {
+        throw new Error("No se pudieron cargar los clientes");
+      }
+
       if (!ventasRes.ok) {
         throw new Error("No se pudieron cargar las ventas");
       }
 
       const productosData = (await productosRes.json()) as Producto[];
+      const clientesData = (await clientesRes.json()) as ClienteResumen[];
       const ventasData = (await ventasRes.json()) as Venta[];
 
       setProductos(productosData);
+      setClientes(clientesData);
       setVentas(ventasData);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error desconocido");
@@ -238,14 +251,19 @@ export default function VentasPage() {
         <form onSubmit={enviarVenta} className="rounded-2xl border border-slate-200 bg-white p-6 text-slate-900 shadow-sm">
           <div className="mb-5 grid gap-4 md:grid-cols-2">
             <label className="text-sm font-medium text-slate-700">
-              Cliente ID (opcional)
-              <input
+              Cliente (opcional)
+              <select
                 value={form.clienteid}
                 onChange={(event) => setForm((prev) => ({ ...prev, clienteid: event.target.value }))}
-                className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 outline-none ring-0 transition focus:border-slate-500"
-                placeholder="Ej: 12"
-                type="number"
-              />
+                className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 outline-none transition focus:border-slate-500"
+              >
+                <option value="">Sin cliente</option>
+                {clientes.map((cliente) => (
+                  <option key={String(cliente.id)} value={String(cliente.id)}>
+                    {cliente.nombre}
+                  </option>
+                ))}
+              </select>
             </label>
 
             <label className="text-sm font-medium text-slate-700">

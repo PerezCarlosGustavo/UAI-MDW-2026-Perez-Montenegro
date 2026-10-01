@@ -82,6 +82,17 @@ async function main() {
     },
   });
 
+  await prisma.cliente.upsert({
+    where: { documento: '30123456789' },
+    update: { nombre: 'Cliente Demo', activo: true },
+    create: {
+      nombre: 'Cliente Demo',
+      documento: '30123456789',
+      telefono: '3415551234',
+      activo: true,
+    },
+  });
+
   for (const producto of productos) {
     const categoriaid = idPorCategoria.get(producto.categoria);
     if (!categoriaid) throw new Error(`Falta la categoría ${producto.categoria}`);
