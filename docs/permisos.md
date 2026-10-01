@@ -44,7 +44,7 @@ Este documento describe la matriz de permisos, los roles del sistema, y las regl
 ## 3. Pertenencia
 - VENDEDOR solo puede ver sus ventas
 - ADMIN puede ver todas
-- Implementado en /api/ventas/mias
+- Implementado en `GET /api/ventas`, `GET /api/ventas/:id` y `GET /api/ventas/mias`, con `filtroVentasVisiblesPara` (`lib/venta/pertenencia.ts`): el id de la sesión va dentro del WHERE, no en un `if` posterior
 - Si un vendedor intenta acceder a una venta que no es suya → 404 (no pertenece)
 
 ## 4. Errores de autorización
