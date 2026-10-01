@@ -18,11 +18,14 @@ export const PERMISOS: {
     crear: ["ADMIN"],
     editar: ["ADMIN"],
     ver: ["ADMIN", "VENDEDOR"],
+    // "borrar" es baja lógica (activo = false): hay ventas que lo referencian.
+    borrar: ["ADMIN"],
   },
   cliente: {
     crear: ["ADMIN", "VENDEDOR"],
     editar: ["ADMIN"],
     ver: ["ADMIN", "VENDEDOR"],
+    borrar: ["ADMIN"],
   },
   venta: {
     crear: ["ADMIN", "VENDEDOR"],

@@ -1,16 +1,15 @@
-import { requerirUsuario } from "@/app/api/auth/auth";
-import { prisma } from "@/lib/db/client";
+import { requerirUsuario } from "@/lib/auth";
+import { listarVentasVisiblesPara } from "@/lib/db/ventas";
 import { responderJson } from "@/lib/utils";
 import { responderError } from "@/lib/errores";
 
+// Solo VENDEDOR. Para él es lo mismo que GET /api/ventas (ya filtra por su id);
+// se mantiene porque está documentado en docs/api.md.
 export async function GET() {
   try {
     const usuario = await requerirUsuario("VENDEDOR");
 
-    const ventas = await prisma.venta.findMany({
-      where: { usuarioid: usuario.id },
-      include: { detalleventa: true, cliente: true },
-    });
+    const ventas = await listarVentasVisiblesPara(usuario);
 
     return responderJson(ventas);
   } catch (error) {

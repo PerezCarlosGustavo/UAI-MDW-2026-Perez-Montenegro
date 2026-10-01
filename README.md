@@ -151,15 +151,14 @@ docs/
 - No se puede desactivar cliente con movimientos pendientes
 
 ### Ventas
-- Debe tener al menos un detalle
-- Cliente debe existir (si se envía)
+- Debe tener al menos un producto
+- Cliente debe existir y estar activo (si se envía)
 - Producto debe existir y estar activo
-- Subtotal coherente
-- Total = suma de subtotales
-- Stock suficiente
-- Stock se descuenta al confirmar
-- VENDEDOR solo crea ventas propias
-- ADMIN puede crear ventas para cualquiera
+- El precio sale del catálogo, no del cliente
+- Stock insuficiente no bloquea: queda negativo con advertencia (ADR 0004)
+- Solo descuentan stock los productos con permitestock
+- Venta y stock se guardan en una transacción
+- VENDEDOR ve solo sus ventas; ADMIN ve todas
 
 ### Cuenta Corriente
 - FIFO estricto

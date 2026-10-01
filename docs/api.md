@@ -93,13 +93,36 @@ Actualiza un producto.
 }
 ```
 ### Respuesta 200
-```json
-{ "ok": true }
-```
+El producto actualizado.
+
 ### Errores
 - 404 → Producto inexistente
 - 400 → Validación de forma
 - 409 → Reglas de negocio
+
+## GET /api/productos/:id
+Un producto (activo o no).
+
+### Roles
+- ADMIN ✓
+- VENDEDOR ✓
+
+### Errores
+- 400 → id no numérico
+- 404 → Producto inexistente
+
+## DELETE /api/productos/:id
+Baja lógica: pone `activo = false`. El producto deja de aparecer en el catálogo y no se puede vender, pero la fila queda porque hay ventas que lo referencian.
+
+### Roles
+- ADMIN ✓
+- VENDEDOR ✗ → 403
+
+### Respuesta 200
+El producto con `activo: false`.
+
+### Errores
+- 404 → Producto inexistente
 
 # 3. Categorías
 ## GET /api/categorias
@@ -113,7 +136,18 @@ Roles: ADMIN ✓
 
 # 4. Clientes
 ## GET /api/clientes
+Clientes activos, ordenados por nombre (máximo 200).
+
 Roles: ADMIN ✓ / VENDEDOR ✓
+
+## GET /api/clientes/:id
+Un cliente (activo o no).
+
+Roles: ADMIN ✓ / VENDEDOR ✓
+
+### Errores
+- 400 → id no numérico
+- 404 → Cliente inexistente
 
 ## POST /api/clientes
 Roles: ADMIN ✓ / VENDEDOR ✓
@@ -140,64 +174,81 @@ Roles: ADMIN ✓
 - 409 → Documento duplicado
 - 409 → No se puede desactivar cliente con movimientos
 
+## DELETE /api/clientes/:id
+Baja lógica: pone `activo = false`. El cliente no puede comprar, pero la fila queda por sus ventas y su cuenta corriente.
+
+Roles: ADMIN ✓ / VENDEDOR ✗ → 403
+
+### Errores
+- 404 → Cliente inexistente
+- 409 → El cliente tiene movimientos en cuenta corriente
+
 # 5. Ventas
-## GET/api/ventas
-Lista todas las ventas.
+## GET /api/ventas
+Lista las ventas que el usuario puede ver, de a 50, las más nuevas primero. Paginación con `?pagina=N` (empieza en 1).
 
-### Roles
-- ADMIN ✓
-- VENDEDOR ✓
-(VENDEDOR ve todas, pero para ver solo las propias existe /mias)
+### Roles y pertenencia
+- ADMIN ✓ → ve todas
+- VENDEDOR ✓ → ve **solo las que registró él** (el id de la sesión va en el WHERE)
+- Sin sesión ✗ → 401
 
-GET /api/ventas/mias
-Lista solo las ventas del vendedor autenticado.
+### Errores
+- 400 → `pagina` inválida
+
+## GET /api/ventas/:id
+Una venta con su detalle.
+
+- ADMIN: cualquier venta.
+- VENDEDOR: solo las suyas. Una venta de otro vendedor responde **404**, igual que si no existiera (403 confirmaría que existe).
+
+## GET /api/ventas/mias
+Las ventas del vendedor autenticado. Para un VENDEDOR es lo mismo que `GET /api/ventas`.
 
 Roles
 - VENDEDOR ✓
 - ADMIN ✗ → 403
 
-## POST/api/ventas
-Registra una venta.
+## POST /api/ventas
+Registra una venta. El usuario de la venta sale de la sesión.
 
 ### Roles
 - ADMIN ✓
 - VENDEDOR ✓
 
 ### Body
+Solo producto y cantidad. **El precio, el subtotal y el total los calcula el servidor** con el precio de lista del catálogo; si el body trae esos campos, se ignoran.
 ```json
 {
   "clienteid": 12,
   "tipopago": 0,
-  "total": 1500,
   "detalles": [
-    { "productoid": 1,
-      "cantidad": 2,
-      "preciounitario": 750,
-      "subtotal": 1500
-    }
+    { "productoid": 1, "cantidad": 2 }
   ]
 }
 ```
+`tipopago`: 0 = contado, 1 = cuenta corriente.
+
 ### Reglas de negocio
-- Cliente debe existir (si se envía)
+- Cliente debe existir y estar activo (si se envía)
 - Producto debe existir y estar activo
-- Cantidad > 0
-- Precio unitario > 0
-- Subtotal coherente
-- Total = suma de subtotales
-- Si permitestock = true → descuenta stock
-- Stock insuficiente → 409
-- VENDEDOR solo crea ventas propias
-- ADMIN puede crear ventas para cualquiera
+- Precio unitario = `preciolista` del producto
+- Solo se descuenta stock de productos con `permitestock = true`
+- **Stock insuficiente no bloquea la venta** (ADR 0004): el stock queda negativo y la respuesta trae una advertencia
+- La venta y el descuento de stock se guardan en una sola transacción
 
 ### Respuesta 201
+La venta creada, con `advertencias` (vacío si no hubo problemas de stock):
 ```json
-{ "id": 88 }
+{
+  "id": 88,
+  "total": 5000,
+  "detalleventa": [{ "productoid": 1, "cantidad": 2, "preciounitario": 2500, "subtotal": 5000 }],
+  "advertencias": ["Stock insuficiente para GASEOSA: había 1 y se vendieron 2. El stock queda en negativo, hay que ajustarlo."]
+}
 ```
 ### Errores
-- 400 → Validación de forma
-- 404 → Cliente o producto inexistente
-- 409 → Reglas de negocio (stock, totales, etc.)
+- 400 → Validación de forma (sin productos, cantidad ≤ 0, tipopago distinto de 0/1)
+- 409 → Cliente o producto inexistente o inactivo
 
 # 6. Cuenta Corriente
 ## GET/api/cuentacorriente/:clienteid
@@ -343,9 +394,13 @@ El usuario actualizado (mismo formato que en la lista).
 |GET /api/productos|✓|✓|✗|
 |POST /api/productos|✓|✗|✗|
 |PUT /api/productos/:id|✓|✗|✗|
+|GET /api/productos/:id|✓|✓|✗|
+|DELETE /api/productos/:id|✓|✗|✗|
 |GET /api/clientes|✓|✓|✗|
 |POST /api/clientes|✓|✓|✗|
-|PUT /api/clientes/:id|✓|✓|✗|
+|PUT /api/clientes/:id|✓|✗|✗|
+|GET /api/clientes/:id|✓|✓|✗|
+|DELETE /api/clientes/:id|✓|✗|✗|
 |GET /api/ventas|✓|✓|✗|
 |GET /api/ventas/mias|✓|✓|✗|
 |POST /api/ventas|✓|✓|✗|
