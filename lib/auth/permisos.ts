@@ -5,8 +5,8 @@ import type { Rol } from "@prisma/client";
 //
 // PENDIENTE no aparece en ninguna lista a propósito: todo le da 403.
 export const PERMISOS: {
-  producto: Record<"crear" | "editar" | "ver", Rol[]>;
-  cliente: Record<"crear" | "editar" | "ver", Rol[]>;
+  producto: Record<"crear" | "editar" | "ver" | "borrar", Rol[]>;
+  cliente: Record<"crear" | "editar" | "ver" | "borrar", Rol[]>;
   venta: Record<"crear" | "ver", Rol[]>;
   usuario: Record<"editar" | "ver", Rol[]>;
 } = {

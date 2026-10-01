@@ -17,10 +17,11 @@ export default async function Home() {
   if (usuario.rol === "PENDIENTE") {
     return (
       <main className="mx-auto max-w-2xl p-8">
-        <h1 className="text-2xl font-bold">Cuenta pendiente de aprobación</h1>
+        <UsuarioActual usuario={usuario} />
+        <h1 className="mt-8 text-2xl font-bold">Cuenta pendiente de aprobación</h1>
         <p className="mt-4 text-sm opacity-80">
-          Ya estás registrado como {usuario.email}. Un administrador tiene que
-          asignarte un rol antes de que puedas usar el sistema.
+          Ya estás registrado. Un administrador tiene que asignarte un rol antes
+          de que puedas usar el sistema.
         </p>
       </main>
     );
