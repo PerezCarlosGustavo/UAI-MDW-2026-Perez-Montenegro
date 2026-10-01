@@ -1,10 +1,24 @@
 import { verificarPermiso } from "@/lib/auth/verificarPermiso";
-import { prisma } from "@/lib/db/client";
+import { crearCliente, listarClientesActivos } from "@/lib/db/clientes";
 import { responderJson } from "@/lib/utils";
 import { validarCliente } from "@/lib/cliente/validaciones";
 import { validarReglasCliente } from "@/lib/cliente/reglas";
 import { responderError } from "@/lib/errores";
 import { crearClienteSchema } from "@/lib/schemas/cliente";
+
+// GET /api/clientes → clientes activos (ADMIN y VENDEDOR, para elegirlos al
+// vender o fiar).
+export async function GET() {
+  try {
+    await verificarPermiso("cliente", "ver");
+
+    const clientes = await listarClientesActivos();
+
+    return responderJson(clientes);
+  } catch (error) {
+    return responderError("GET /api/clientes", error);
+  }
+}
 
 export async function POST(req: Request) {
   try {
@@ -37,14 +51,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const cliente = await prisma.cliente.create({
-      data: {
-        nombre: data.nombre,
-        documento: data.documento,
-        telefono: data.telefono,
-        activo: data.activo ?? true,
-      },
-    });
+    const cliente = await crearCliente(data);
 
     return responderJson(cliente, 201);
   } catch (error) {

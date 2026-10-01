@@ -28,11 +28,13 @@ Este documento describe la matriz de permisos, los roles del sistema, y las regl
   producto: {
     crear: ["ADMIN"],
     editar: ["ADMIN"],
+    borrar: ["ADMIN"],
     ver: ["ADMIN", "VENDEDOR"]
   },
   cliente: {
     crear: ["ADMIN", "VENDEDOR"],
     editar: ["ADMIN"],
+    borrar: ["ADMIN"],
     ver: ["ADMIN", "VENDEDOR"]
   },
   venta: {

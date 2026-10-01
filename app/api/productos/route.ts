@@ -1,5 +1,5 @@
 import { verificarPermiso } from "@/lib/auth/verificarPermiso";
-import { prisma } from "@/lib/db/client";
+import { crearProducto, listarProductosActivos } from "@/lib/db/productos";
 import { responderJson } from "@/lib/utils";
 import { validarProducto } from "@/lib/producto/validaciones";
 import { validarReglasProducto } from "@/lib/producto/reglas";
@@ -10,10 +10,7 @@ export async function GET() {
   try {
     await verificarPermiso("producto", "ver");
 
-    const productos = await prisma.producto.findMany({
-      where: { activo: true },
-      orderBy: { id: "asc" }
-    });
+    const productos = await listarProductosActivos();
 
     return responderJson(productos);
   } catch (error) {
@@ -52,17 +49,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const producto = await prisma.producto.create({
-      data: {
-        nombre: data.nombre,
-        categoriaid: BigInt(data.categoriaid),
-        codigobarra: data.codigobarra,
-        preciolista: data.preciolista,
-        permitestock: data.permitestock,
-        stockactual: data.stockactual,
-        activo: data.activo ?? true,
-      },
-    });
+    const producto = await crearProducto(data);
 
     return responderJson(producto, 201);
   } catch (error) {
