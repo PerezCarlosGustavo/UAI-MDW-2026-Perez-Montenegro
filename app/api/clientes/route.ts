@@ -1,29 +1,28 @@
 import { verificarPermiso } from "@/lib/auth/verificarPermiso";
-import { crearCliente } from "@/lib/db/clientes";
+import { crearCliente, listarClientes } from "@/lib/db/clientes";
 import { responderJson } from "@/lib/utils";
 import { validarCliente } from "@/lib/cliente/validaciones";
 import { validarReglasCliente } from "@/lib/cliente/reglas";
 import { responderError } from "@/lib/errores";
-import { crearClienteSchema } from "@/lib/schemas/cliente";
-import { prisma } from "@/lib/db/client";
+import { crearClienteSchema, listarClientesQuerySchema } from "@/lib/schemas/cliente";
 
-// GET /api/clientes → GetAll de clientes con id y nombre.
+// GET /api/clientes?incluirInactivos=true → id y nombre de los clientes
+// (por defecto solo los activos).
 export async function GET(req: Request) {
   try {
     await verificarPermiso("cliente", "ver");
 
-    const url = new URL(req.url);
-    const incluirInactivos = url.searchParams.get("incluirInactivos") === "true";
+    const query = listarClientesQuerySchema.safeParse(
+      Object.fromEntries(new URL(req.url).searchParams)
+    );
+    if (!query.success) {
+      return Response.json(
+        { error: "Validación fallida", detalles: query.error.issues.map((issue) => issue.message) },
+        { status: 400 }
+      );
+    }
 
-    const clientes = await prisma.cliente.findMany({
-      where: incluirInactivos ? {} : { activo: true },
-      orderBy: { nombre: "asc" },
-      select: {
-        id: true,
-        nombre: true,
-      },
-      take: 200,
-    });
+    const clientes = await listarClientes({ incluirInactivos: query.data.incluirInactivos });
 
     return responderJson(clientes);
   } catch (error) {
