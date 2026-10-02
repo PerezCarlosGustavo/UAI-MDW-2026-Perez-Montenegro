@@ -72,7 +72,7 @@ export async function buscarProductosParaVenta(ids: number[]): Promise<ProductoP
 export async function buscarClienteParaVenta(id: number): Promise<ClienteParaVenta> {
   return prisma.cliente.findUnique({
     where: { id: BigInt(id) },
-    select: { activo: true },
+    select: { activo: true, documento: true },
   });
 }
 
@@ -113,6 +113,26 @@ export async function registrarVenta(datos: {
       select: CAMPOS_VENTA,
     });
 
+    if (datos.tipopago === 1 && datos.clienteid !== null) {
+      const cuentaCorriente = await tx.cuentacorriente.upsert({
+        where: { clienteid: BigInt(datos.clienteid) },
+        update: {},
+        create: { clienteid: BigInt(datos.clienteid) },
+        select: { id: true },
+      });
+
+      await tx.cuentacorrientemovimiento.createMany({
+        data: datos.lineas.map((linea) => ({
+          cuentacorrienteid: cuentaCorriente.id,
+          ventaid: venta.id,
+          productoid: BigInt(linea.productoid),
+          tipo: 1,
+          cantidad: linea.cantidad,
+          importe: 0,
+        })),
+      });
+    }
+
     for (const descuento of datos.descuentosDeStock) {
       await tx.producto.update({
         where: { id: BigInt(descuento.productoid) },
@@ -121,5 +141,5 @@ export async function registrarVenta(datos: {
     }
 
     return venta;
-  });
+  }, { maxWait: 10_000, timeout: 15_000 });
 }

@@ -61,8 +61,8 @@ Criterios de aceptación:
 **Como** *vendedor*, **quiero** imputar una compra fiada a la Cuenta Corriente de un cliente guardando las unidades de producto, **para** no congelar el precio en pesos frente a la inflación.
 
 Criterios de aceptación:
-- [ ] Dado que se selecciona la forma de pago "Cuenta Corriente" y un cliente válido, cuando se confirma la venta, el sistema registra cada producto como CuentaCorrienteItem con estado PENDIENTE y sus unidades correspondientes.
-- [ ] Caso de error: cuando se intenta procesar una venta en cuenta corriente sin seleccionar un cliente registrado, el sistema bloquea la acción y exige seleccionar o crear un cliente.
+- [ ] Dado que se selecciona la forma de pago "Cuenta Corriente" y un cliente válido, cuando se confirma la venta, el sistema crea la cuenta corriente si no existe y registra un movimiento asociado a la venta por cada producto y cantidad, dentro de la misma transacción.
+- [ ] Caso de error: cuando se intenta procesar una venta en cuenta corriente sin seleccionar un cliente registrado, o seleccionando Consumidor Final, el sistema bloquea la acción y exige seleccionar o crear un cliente.
 
 ### H5 — Cobranza de Deuda por Monto (FIFO sin Fraccionar)
 **Como** *vendedor*, **quiero** ingresar un monto entregado por el cliente para saldar deuda, **para** que el sistema cancele los productos fiados en orden cronológico a precio de hoy y acredite el sobrante.
@@ -86,7 +86,7 @@ El recorrido completo, paso a paso, del flujo que da valor al sistema (no un ABM
 1. El Vendedor inicia sesión en la aplicación y accede directamente a la interfaz del Punto de Venta (POS).
 2. Agrega artículos al carrito escaneando los códigos de barras con la pistola USB o buscando por nombre/código con el teclado.
 3. Presiona el atajo de teclado para seleccionar el tipo de venta (Al Contado o Cuenta Corriente).
-4. Si es en Cuenta Corriente, selecciona el Cliente y confirma la transacción; las unidades físicas se registran como deuda en CuentaCorrienteItem y se descuenta el stock.
+4. Si es en Cuenta Corriente, selecciona el Cliente y confirma la transacción; si no tiene cuenta corriente, se crea, se registran las unidades físicas de cada producto como deuda y se descuenta el stock.
 5. Días después, el cliente regresa al comercio a entregar dinero para saldar su cuenta.
 6. El Vendedor abre la ficha del cliente en el módulo de Cuentas Corrientes e ingresa el monto entregado en efectivo.
 7. El sistema ejecuta el algoritmo en el servidor: revaloriza los productos fiados al precio del día de hoy, cancela de forma cronológica (FIFO) los ítems cubiertos al 100% y guarda cualquier resto como saldoAFavor.

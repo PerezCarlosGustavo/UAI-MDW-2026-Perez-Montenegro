@@ -1,11 +1,15 @@
-export function validarVentaFiado(clienteid: number | null, tipopago: number) {
+export function validarVentaFiado(
+  clienteid: number | null,
+  tipopago: number,
+  esConsumidorFinal = false
+): { ok: false; error: string } | { ok: true } {
   // tipopago = 1 → cuenta corriente
   const esFiado = tipopago === 1;
 
-  if (esFiado && !clienteid) {
+  if (esFiado && (!clienteid || esConsumidorFinal)) {
     return {
       ok: false,
-      error: "Venta fiada sin cliente",
+      error: "Para una venta en cuenta corriente tiene que elegir un cliente.",
     };
   }
 

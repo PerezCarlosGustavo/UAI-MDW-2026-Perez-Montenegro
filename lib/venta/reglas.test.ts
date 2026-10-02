@@ -24,6 +24,11 @@ const contado = (detalles: { productoid: number; cantidad: number }[]) => ({
   detalles,
 });
 
+const cuentaCorriente = (detalles: { productoid: number; cantidad: number }[]) => ({
+  tipopago: 1 as const,
+  detalles,
+});
+
 describe("armarVenta", () => {
   it("usa el precio del catálogo y calcula subtotales y total", () => {
     const venta = armarVenta(
@@ -103,7 +108,39 @@ describe("armarVenta", () => {
     const pedido = { ...contado([{ productoid: 1, cantidad: 1 }]), clienteid: 5 };
 
     expect(armarVenta(pedido, [gaseosa], null).ok).toBe(false);
-    expect(armarVenta(pedido, [gaseosa], { activo: false }).ok).toBe(false);
-    expect(armarVenta(pedido, [gaseosa], { activo: true }).ok).toBe(true);
+    expect(armarVenta(pedido, [gaseosa], { activo: false, documento: "123" }).ok).toBe(false);
+    expect(armarVenta(pedido, [gaseosa], { activo: true, documento: "123" }).ok).toBe(true);
+  });
+
+  it("exige un cliente real para una venta en cuenta corriente", () => {
+    const sinCliente = armarVenta(
+      cuentaCorriente([{ productoid: 1, cantidad: 1 }]),
+      [gaseosa],
+      undefined
+    );
+    const consumidorFinal = armarVenta(
+      { ...cuentaCorriente([{ productoid: 1, cantidad: 1 }]), clienteid: 5 },
+      [gaseosa],
+      { activo: true, documento: "0" }
+    );
+
+    expect(sinCliente).toMatchObject({
+      ok: false,
+      errores: ["Para una venta en cuenta corriente tiene que elegir un cliente."],
+    });
+    expect(consumidorFinal).toMatchObject({
+      ok: false,
+      errores: ["Para una venta en cuenta corriente tiene que elegir un cliente."],
+    });
+  });
+
+  it("acepta una venta en cuenta corriente con un cliente regular", () => {
+    const venta = armarVenta(
+      { ...cuentaCorriente([{ productoid: 1, cantidad: 1 }]), clienteid: 5 },
+      [gaseosa],
+      { activo: true, documento: "123" }
+    );
+
+    expect(venta.ok).toBe(true);
   });
 });

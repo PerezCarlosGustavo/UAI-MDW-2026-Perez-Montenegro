@@ -1,5 +1,6 @@
 import type { CrearVentaInput } from "@/lib/schemas/venta";
 import { validarStock } from "@/lib/reglas/validarStock";
+import { validarVentaFiado } from "@/lib/reglas/validarVentaFiado";
 
 /**
  * Reglas de negocio de una venta nueva. Función pura: no consulta la base ni
@@ -23,7 +24,7 @@ export type ProductoParaVenta = {
   activo: boolean;
 };
 
-export type ClienteParaVenta = { activo: boolean } | null;
+export type ClienteParaVenta = { activo: boolean; documento: string | null } | null;
 
 export type LineaVenta = {
   productoid: number;
@@ -54,6 +55,13 @@ export function armarVenta(
   cliente: ClienteParaVenta | undefined
 ): VentaArmada {
   const errores: string[] = [];
+
+  const validacionFiado = validarVentaFiado(
+    pedido.clienteid ?? null,
+    pedido.tipopago,
+    cliente?.documento === "0"
+  );
+  if (!validacionFiado.ok) errores.push(validacionFiado.error);
 
   if (cliente === null) errores.push("El cliente no existe.");
   if (cliente && !cliente.activo) errores.push("El cliente está inactivo.");
