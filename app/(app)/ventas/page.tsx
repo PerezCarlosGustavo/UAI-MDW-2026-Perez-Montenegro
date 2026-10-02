@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
 type Producto = {
@@ -38,6 +39,12 @@ type Venta = {
   }>;
 };
 
+const moneda = new Intl.NumberFormat("es-AR", {
+  style: "currency",
+  currency: "ARS",
+  minimumFractionDigits: 2,
+});
+
 const detalleBase: DetalleForm = {
   productoid: "",
   cantidad: "1",
@@ -67,7 +74,7 @@ export default function VentasPage() {
     try {
       const [productosRes, clientesRes, ventasRes] = await Promise.all([
         fetch("/api/productos"),
-        fetch("/api/clientes?incluirInactivos=true"),
+        fetch("/api/clientes"),
         fetch("/api/ventas"),
       ]);
 
@@ -208,26 +215,34 @@ export default function VentasPage() {
     }
   };
 
+  const claseCampo =
+    "mt-1.5 w-full rounded-md border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-900 dark:text-white";
+  const claseCampoSoloLectura =
+    "mt-1.5 w-full rounded-md border border-slate-200 bg-slate-100 px-3 py-2.5 text-sm tabular-nums text-slate-600 dark:border-slate-800 dark:bg-slate-800/60 dark:text-slate-300";
+  const claseEtiqueta = "block text-sm font-medium text-slate-700 dark:text-slate-300";
+
   return (
-    <main className="mx-auto max-w-6xl space-y-8 p-8">
-      <header className="flex items-center justify-between gap-4">
+    <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+      <header className="mb-8 flex flex-wrap items-end justify-between gap-4 border-b border-slate-200 pb-5 dark:border-slate-800">
         <div>
-          <p className="text-sm uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">Punto de venta</p>
-          <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-100">Ventas</h1>
+          <Link href="/" className="text-sm text-slate-500 hover:text-emerald-700 dark:hover:text-emerald-300">← Inicio</Link>
+          <p className="mt-4 text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700 dark:text-emerald-400">Punto de venta</p>
+          <h1 className="mt-1 text-3xl font-semibold text-slate-950 dark:text-white">Ventas</h1>
         </div>
-        <div className="rounded-full bg-slate-100 px-4 py-2 text-sm font-medium text-slate-700">
-          Total en esta venta: ${totalVenta.toFixed(2)}
+        <div className="min-w-44 border-l-4 border-emerald-600 pl-3">
+          <p className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Total de esta venta</p>
+          <p className="mt-1 text-2xl font-semibold tabular-nums text-slate-950 dark:text-white">{moneda.format(totalVenta)}</p>
         </div>
       </header>
 
       {error ? (
-        <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+        <div role="alert" className="mb-5 border-l-4 border-rose-600 bg-rose-50 px-4 py-3 text-sm text-rose-900 dark:bg-rose-950/40 dark:text-rose-100">
           {error}
         </div>
       ) : null}
 
       {mensaje ? (
-        <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-700">
+        <div role="status" className="mb-5 border-l-4 border-emerald-600 bg-emerald-50 px-4 py-3 text-sm text-emerald-950 dark:bg-emerald-950/40 dark:text-emerald-100">
           {mensaje}
         </div>
       ) : null}
@@ -235,8 +250,8 @@ export default function VentasPage() {
       {/* Stock negativo: la venta se hizo igual (ADR 0004), pero se avisa
           para que el administrador ajuste el inventario. */}
       {advertencias.length > 0 ? (
-        <div role="status" className="rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900">
-          <p className="font-medium">Atención:</p>
+        <div role="status" className="mb-5 border-l-4 border-amber-500 bg-amber-50 px-4 py-3 text-sm text-amber-950 dark:bg-amber-950/40 dark:text-amber-100">
+          <p className="font-semibold">Atención</p>
           <ul className="mt-1 list-disc pl-5">
             {advertencias.map((advertencia) => (
               <li key={advertencia}>{advertencia}</li>
@@ -245,17 +260,17 @@ export default function VentasPage() {
         </div>
       ) : null}
 
-      <section className="grid gap-8 lg:grid-cols-[1.4fr_0.8fr]">
-        {/* text-slate-900 explícito: con el sistema en modo oscuro el texto
-            heredado es claro y sobre el fondo blanco no se leía. */}
-        <form onSubmit={enviarVenta} className="rounded-2xl border border-slate-200 bg-white p-6 text-slate-900 shadow-sm">
-          <div className="mb-5 grid gap-4 md:grid-cols-2">
-            <label className="text-sm font-medium text-slate-700">
-              Cliente (opcional)
+      <div className="grid gap-8 lg:grid-cols-[minmax(0,1.6fr)_minmax(17rem,0.8fr)]">
+        <form onSubmit={enviarVenta} aria-labelledby="nueva-venta">
+          <h2 id="nueva-venta" className="mb-4 text-lg font-semibold text-slate-900 dark:text-slate-100">Nueva venta</h2>
+
+          <div className="mb-6 grid gap-4 sm:grid-cols-2">
+            <label className={claseEtiqueta}>
+              Cliente
               <select
                 value={form.clienteid}
                 onChange={(event) => setForm((prev) => ({ ...prev, clienteid: event.target.value }))}
-                className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 outline-none transition focus:border-slate-500"
+                className={claseCampo}
               >
                 <option value="">Sin cliente</option>
                 {clientes.map((cliente) => (
@@ -266,12 +281,12 @@ export default function VentasPage() {
               </select>
             </label>
 
-            <label className="text-sm font-medium text-slate-700">
+            <label className={claseEtiqueta}>
               Tipo de pago
               <select
                 value={form.tipopago}
                 onChange={(event) => setForm((prev) => ({ ...prev, tipopago: event.target.value }))}
-                className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 outline-none transition focus:border-slate-500"
+                className={claseCampo}
               >
                 <option value="0">Contado</option>
                 <option value="1">Cuenta corriente</option>
@@ -279,37 +294,40 @@ export default function VentasPage() {
             </label>
           </div>
 
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-slate-900">Productos</h2>
+          <div className="mb-3 flex items-baseline justify-between gap-3 border-b border-slate-200 pb-2 dark:border-slate-800">
+            <h3 className="font-semibold text-slate-900 dark:text-slate-100">Productos</h3>
             <button
               type="button"
               onClick={agregarLinea}
-              className="rounded-lg bg-slate-900 px-3 py-2 text-sm font-medium text-white"
+              className="text-sm font-medium text-emerald-700 hover:text-emerald-800 dark:text-emerald-400 dark:hover:text-emerald-300"
             >
-              + Agregar línea
+              + Agregar producto
             </button>
           </div>
 
-          <div className="space-y-4">
+          <ul>
             {form.detalles.map((detalle, index) => (
-              <div key={index} className="grid gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3 md:grid-cols-[1.6fr_0.7fr_0.9fr_0.9fr_auto]">
-                <label className="text-sm font-medium text-slate-700">
+              <li
+                key={index}
+                className="grid gap-3 border-b border-slate-100 py-4 last:border-0 dark:border-slate-800 sm:grid-cols-[minmax(0,1.8fr)_6rem_8rem_8rem_auto] sm:items-end"
+              >
+                <label className={claseEtiqueta}>
                   Producto
                   <select
                     value={detalle.productoid}
                     onChange={(event) => actualizarDetalle(index, "productoid", event.target.value)}
-                    className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 outline-none transition focus:border-slate-500"
+                    className={claseCampo}
                   >
                     <option value="">Seleccionar</option>
                     {productos.map((producto) => (
                       <option key={String(producto.id)} value={String(producto.id)}>
-                        {producto.nombre} — ${Number(producto.preciolista).toFixed(2)}
+                        {producto.nombre} — {moneda.format(Number(producto.preciolista))}
                       </option>
                     ))}
                   </select>
                 </label>
 
-                <label className="text-sm font-medium text-slate-700">
+                <label className={claseEtiqueta}>
                   Cantidad
                   <input
                     type="number"
@@ -317,83 +335,80 @@ export default function VentasPage() {
                     step="1"
                     value={detalle.cantidad}
                     onChange={(event) => actualizarDetalle(index, "cantidad", event.target.value)}
-                    className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 outline-none transition focus:border-slate-500"
+                    className={`${claseCampo} tabular-nums`}
                   />
                 </label>
 
-                <label className="text-sm font-medium text-slate-700">
+                <label className={claseEtiqueta}>
                   Precio unit.
                   {/* Solo lectura: el servidor cobra el precio de lista del
                       catálogo, así que editarlo acá no tendría efecto. */}
-                  <input
-                    value={detalle.preciounitario}
-                    readOnly
-                    className="mt-1 w-full rounded-lg border border-slate-200 bg-slate-100 px-3 py-2 text-slate-600"
-                  />
+                  <input value={moneda.format(Number(detalle.preciounitario || 0))} readOnly className={claseCampoSoloLectura} />
                 </label>
 
-                <label className="text-sm font-medium text-slate-700">
+                <label className={claseEtiqueta}>
                   Subtotal
-                  <input
-                    value={detalle.subtotal}
-                    readOnly
-                    className="mt-1 w-full rounded-lg border border-slate-200 bg-slate-100 px-3 py-2 text-slate-600"
-                  />
+                  <input value={moneda.format(Number(detalle.subtotal || 0))} readOnly className={claseCampoSoloLectura} />
                 </label>
 
                 <button
                   type="button"
                   onClick={() => eliminarLinea(index)}
-                  className="self-end rounded-lg border border-red-200 px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50"
                   disabled={form.detalles.length === 1}
+                  className="rounded-md border border-slate-300 px-3 py-2.5 text-sm text-slate-700 hover:border-rose-400 hover:text-rose-700 disabled:cursor-not-allowed disabled:opacity-40 dark:border-slate-700 dark:text-slate-300 dark:hover:text-rose-300"
                 >
                   Quitar
                 </button>
-              </div>
+              </li>
             ))}
-          </div>
+          </ul>
 
-          <div className="mt-6 flex items-center justify-between gap-3">
-            <span className="text-sm text-slate-500">Total estimado: ${totalVenta.toFixed(2)}</span>
+          <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 pt-5 dark:border-slate-800">
+            <p className="text-sm text-slate-500 dark:text-slate-400">
+              Los precios salen del catálogo y los confirma el servidor al registrar.
+            </p>
             <button
               type="submit"
               disabled={guardando || loading}
-              className="rounded-lg bg-blue-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+              className="rounded-md bg-emerald-700 px-5 py-2.5 text-sm font-semibold text-white hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-emerald-600 dark:hover:bg-emerald-500"
             >
-              {guardando ? "Guardando..." : "Registrar venta"}
+              {guardando ? "Registrando…" : "Registrar venta"}
             </button>
           </div>
         </form>
 
-        <aside className="rounded-2xl border border-slate-200 bg-white p-6 text-slate-900 shadow-sm">
-          <h2 className="mb-4 text-lg font-semibold text-slate-900">Ventas recientes</h2>
+        <aside aria-labelledby="ventas-recientes" className="min-w-0 border-t border-slate-200 pt-6 dark:border-slate-800 lg:border-l lg:border-t-0 lg:pl-8 lg:pt-0">
+          <div className="mb-4 flex items-baseline justify-between gap-3">
+            <h2 id="ventas-recientes" className="text-lg font-semibold text-slate-900 dark:text-slate-100">Ventas recientes</h2>
+            <span className="text-xs text-slate-500">{ventas.length} ventas</span>
+          </div>
 
           {loading ? (
-            <p className="text-sm text-slate-500">Cargando...</p>
+            <p className="py-6 text-sm text-slate-500">Cargando ventas…</p>
           ) : ventas.length === 0 ? (
-            <p className="text-sm text-slate-500">Todavía no hay ventas registradas.</p>
+            <p className="border-y border-slate-200 py-5 text-sm text-slate-500 dark:border-slate-800">Todavía no hay ventas registradas.</p>
           ) : (
-            <ul className="space-y-3">
+            <ul className="border-y border-slate-200 dark:border-slate-800">
               {ventas.slice(0, 8).map((venta) => (
-                <li key={String(venta.id)} className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                <li key={String(venta.id)} className="border-b border-slate-100 py-3 last:border-0 dark:border-slate-800">
                   <div className="flex items-center justify-between gap-2">
-                    <span className="font-medium text-slate-800">#{venta.id}</span>
-                    <span className="text-xs uppercase tracking-[0.15em] text-slate-500">
-                      {Number(venta.tipopago) === 1 ? "Cuenta Corriente" : "Contado"}
+                    <span className="text-sm font-medium text-slate-900 dark:text-slate-100">Venta #{venta.id}</span>
+                    <span className="text-sm font-semibold tabular-nums text-slate-900 dark:text-slate-100">
+                      {moneda.format(Number(venta.total ?? 0))}
                     </span>
                   </div>
-                  <p className="mt-2 text-sm text-slate-600">
-                    Cliente: {venta.cliente?.nombre ?? "Sin cliente"}
-                  </p>
-                  <p className="mt-1 text-sm text-slate-600">
-                    Total: ${Number(venta.total ?? 0).toFixed(2)}
-                  </p>
+                  <div className="mt-1 flex items-center justify-between gap-2 text-xs text-slate-500 dark:text-slate-400">
+                    <span className="truncate">{venta.cliente?.nombre ?? "Sin cliente"}</span>
+                    <span className={Number(venta.tipopago) === 1 ? "font-medium text-amber-700 dark:text-amber-400" : ""}>
+                      {Number(venta.tipopago) === 1 ? "Cuenta corriente" : "Contado"}
+                    </span>
+                  </div>
                 </li>
               ))}
             </ul>
           )}
         </aside>
-      </section>
+      </div>
     </main>
   );
 }
