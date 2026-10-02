@@ -283,27 +283,7 @@ Devuelve hasta 50 movimientos pendientes en orden FIFO, valorizados al precio ac
 }
 ```
 # 7. Movimientos (Fiado)
-## POST /api/cuentacorriente/:clienteid/movimientos
-Registra ítems fiados.
-
-### Roles
-- ADMIN ✓
-- VENDEDOR ✓
-
-### Body
-```json
-{
-  "ventaid": 88,
-  "items": [
-    { "productoid": 1, "cantidad": 2 },
-    { "productoid": 5, "cantidad": 1 }
-  ]
-}
-```
-
-### Errores
-- 404 → Cliente inexistente
-- 409 → Venta fiada sin cliente
+No hay un endpoint aparte: los movimientos de deuda se registran solos dentro de `POST /api/ventas` cuando `tipopago = 1` (cuenta corriente), en la misma transacción que la venta. Una venta fiada sin cliente, o con Consumidor Final, responde 409.
 
 # 8. Cobranza FIFO
 ## POST /api/cobranza
@@ -426,7 +406,7 @@ El usuario actualizado (mismo formato que en la lista).
 |GET /api/ventas|✓|✓|✗|
 |GET /api/ventas/mias|✓|✓|✗|
 |POST /api/ventas|✓|✓|✗|
-|POST /api/cuentacorriente/:id/movimientos|✓|✓|✗|
+|GET /api/cuentacorriente/:clienteid|✓|✓|✗|
 |POST /api/cobranza|✓|✓|✗|
 |GET /api/usuarios|✓|✗|✗|
 |PATCH /api/usuarios/:id|✓|✗|✗|
