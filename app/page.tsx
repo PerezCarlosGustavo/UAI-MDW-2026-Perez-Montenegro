@@ -48,6 +48,7 @@ export default async function Home() {
 
       <nav className="mt-6 flex gap-4 text-sm">
         <Link href="/ventas" className="underline">Ventas</Link>
+        <Link href="/clientes" className="underline">Clientes</Link>
         {usuario.rol === "ADMIN" ? (
           <Link href="/usuarios" className="underline">Usuarios</Link>
         ) : null}

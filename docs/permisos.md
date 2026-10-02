@@ -51,6 +51,10 @@ Este documento describe la matriz de permisos, los roles del sistema, y las regl
     crear: ["ADMIN", "VENDEDOR"],
     ver: ["ADMIN", "VENDEDOR"]
   },
+  cuentacorriente: {
+    ver: ["ADMIN", "VENDEDOR"],
+    cobrar: ["ADMIN", "VENDEDOR"]
+  },
   usuario: {
     ver: ["ADMIN"],
     editar: ["ADMIN"]
@@ -62,6 +66,7 @@ Este documento describe la matriz de permisos, los roles del sistema, y las regl
 - ADMIN puede ver todas
 - Implementado en `GET /api/ventas`, `GET /api/ventas/:id` y `GET /api/ventas/mias`, con `filtroVentasVisiblesPara` (`lib/venta/pertenencia.ts`): el id de la sesión va dentro del WHERE, no en un `if` posterior
 - Si un vendedor intenta acceder a una venta que no es suya → 404 (no pertenece)
+- ADMIN y VENDEDOR pueden consultar deudas y registrar cobranzas en cuenta corriente.
 
 ## 4. Errores de autorización
 ### 401 — No autenticado

@@ -1,6 +1,7 @@
-import type { Rol } from "@prisma/client";
+import { Prisma, type Rol } from "@prisma/client";
 import { prisma } from "@/lib/db/client";
 import { filtroVentasVisiblesPara } from "@/lib/venta/pertenencia";
+import { TIPO_MOVIMIENTO_CC } from "@/lib/reglas/tiposMovimientoCuentaCorriente";
 import type { ClienteParaVenta, LineaVenta, ProductoParaVenta } from "@/lib/venta/reglas";
 
 const VENTAS_POR_PAGINA = 50;
@@ -121,12 +122,18 @@ export async function registrarVenta(datos: {
         select: { id: true },
       });
 
+      await tx.$queryRaw<Array<{ id: bigint }>>(Prisma.sql`
+        SELECT "id" FROM "cuentacorriente"
+        WHERE "id" = ${cuentaCorriente.id}
+        FOR UPDATE
+      `);
+
       await tx.cuentacorrientemovimiento.createMany({
         data: datos.lineas.map((linea) => ({
           cuentacorrienteid: cuentaCorriente.id,
           ventaid: venta.id,
           productoid: BigInt(linea.productoid),
-          tipo: 1,
+          tipo: TIPO_MOVIMIENTO_CC.DEUDA_VENTA,
           cantidad: linea.cantidad,
           importe: 0,
         })),

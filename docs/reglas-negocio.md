@@ -54,3 +54,10 @@ Este documento describe todas las validaciones de forma y reglas de negocio apli
 - No se pueden fraccionar productos
 - Si el monto no alcanza → todo va a saldoAFavor
 - Si sobra → saldoAFavor
+
+### Tipos de movimiento del ledger
+- `1`: deuda originada por una venta, con producto, venta y cantidad; no congela el precio.
+- `2`: saldo a favor generado.
+- `3`: producto liquidado, con referencia a la venta y cantidad/importe pagados.
+- `4`: saldo a favor anterior utilizado en una cobranza.
+- `5`: importe recibido en una cobranza, como registro de auditoría.
