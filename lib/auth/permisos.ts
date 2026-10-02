@@ -8,6 +8,7 @@ export const PERMISOS: {
   producto: Record<"crear" | "editar" | "ver" | "borrar", Rol[]>;
   cliente: Record<"crear" | "editar" | "ver" | "borrar", Rol[]>;
   venta: Record<"crear" | "ver", Rol[]>;
+  cuentacorriente: Record<"ver" | "cobrar", Rol[]>;
   usuario: Record<"editar" | "ver", Rol[]>;
 } = {
   usuario: {
@@ -30,5 +31,9 @@ export const PERMISOS: {
   venta: {
     crear: ["ADMIN", "VENDEDOR"],
     ver: ["ADMIN", "VENDEDOR"],
+  },
+  cuentacorriente: {
+    ver: ["ADMIN", "VENDEDOR"],
+    cobrar: ["ADMIN", "VENDEDOR"],
   },
 };

@@ -20,6 +20,11 @@ describe("PERMISOS", () => {
     expect(PERMISOS.cliente.editar).not.toContain("VENDEDOR");
   });
 
+  it("ADMIN y VENDEDOR pueden consultar y cobrar cuentas corrientes", () => {
+    expect(PERMISOS.cuentacorriente.ver).toEqual(["ADMIN", "VENDEDOR"]);
+    expect(PERMISOS.cuentacorriente.cobrar).toEqual(["ADMIN", "VENDEDOR"]);
+  });
+
   it("PENDIENTE no tiene ningún permiso", () => {
     const todos = Object.values(PERMISOS).flatMap((acciones) => Object.values(acciones).flat());
 

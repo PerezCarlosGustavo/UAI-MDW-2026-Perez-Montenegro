@@ -252,7 +252,7 @@ La venta creada, con `advertencias` (vacío si no hubo problemas de stock):
 
 # 6. Cuenta Corriente
 ## GET/api/cuentacorriente/:clienteid
-Devuelve movimientos pendientes y saldo a favor.
+Devuelve hasta 50 movimientos pendientes en orden FIFO, valorizados al precio actual, el total de deuda y el saldo a favor. Acepta `?pagina=N` para recorrer los pendientes.
 
 ### Roles
 - ADMIN ✓
@@ -263,9 +263,22 @@ Devuelve movimientos pendientes y saldo a favor.
 {
   "clienteid": 12,
   "pendientes": [
-    { "productoid": 1, "cantidad": 2, "fecha": "2024-09-01" }
+    {
+      "ventaid": 88,
+      "productoid": 1,
+      "nombre": "GASEOSA",
+      "cantidad": 2,
+      "fecha": "2024-09-01T00:00:00.000Z",
+      "precioUnitario": 2500,
+      "subtotalActual": 5000
+    }
   ],
-  "saldoAFavor": 500
+  "totalPendientes": 1,
+  "totalDeuda": 5000,
+  "saldoAFavor": 500,
+  "pagina": 1,
+  "porPagina": 50,
+  "totalPaginas": 1
 }
 ```
 # 7. Movimientos (Fiado)
@@ -309,17 +322,25 @@ Liquida deuda por monto entregado.
 
 ### Reglas de negocio
 - FIFO estricto
-- No fraccionar productos
-- Si no alcanza → todo va a saldoAFavor
-- Si sobra → saldoAFavor
+- Se consumen primero los saldos a favor anteriores
+- No se fracciona el pendiente más antiguo ni se saltean pendientes
+- Si el dinero no completa el siguiente producto, el remanente queda como saldoAFavor y el producto sigue pendiente
+- Si sobra luego de liquidar pendientes, el sobrante queda como saldoAFavor
+- La cobranza y sus movimientos se guardan en una transacción
 
 ### Respuesta 200
 ```json
 {
+  "clienteid": 12,
+  "montoRecibido": 5000,
   "pagados": [
-    { "productoid": 1, "cantidad": 2, "precioPagado": 3000 }
+    { "ventaid": 88, "productoid": 1, "nombre": "GASEOSA", "cantidad": 2, "precioPagado": 2500, "importe": 5000 }
   ],
-  "saldoAFavor": 2000
+  "deudaAntes": 5000,
+  "deudaRestante": 0,
+  "saldoAFavorUsado": 0,
+  "saldoAFavorGenerado": 0,
+  "saldoAFavor": 0
 }
 ```
 
