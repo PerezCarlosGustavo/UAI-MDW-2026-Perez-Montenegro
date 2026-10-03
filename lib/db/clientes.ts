@@ -3,11 +3,18 @@ import type { ActualizarClienteInput, CrearClienteInput } from "@/lib/schemas/cl
 
 const LIMITE_POR_DEFECTO = 200;
 
-/** Clientes activos, ordenados por nombre para elegirlos en el POS. */
-export async function listarClientesActivos(limite: number = LIMITE_POR_DEFECTO) {
+/**
+ * Clientes para los selectores (POS y cuentas corrientes), ordenados por
+ * nombre. Solo id y nombre: las pantallas no necesitan más.
+ */
+export async function listarClientes(
+  { incluirInactivos = false }: { incluirInactivos?: boolean } = {},
+  limite: number = LIMITE_POR_DEFECTO
+) {
   return prisma.cliente.findMany({
-    where: { activo: true },
+    where: incluirInactivos ? {} : { activo: true },
     orderBy: { nombre: "asc" },
+    select: { id: true, nombre: true },
     take: limite,
   });
 }
