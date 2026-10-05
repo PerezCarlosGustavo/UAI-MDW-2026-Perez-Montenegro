@@ -165,6 +165,11 @@ Content-Type: application/json
 
 { "nombre": "PRUEBA api.http", "telefono": "3415550000" }
 
+### cliente recién creado sin cuenta corriente → 200, totalDeuda: 0
+# Ejecutar antes de la venta fiada de la sección 3.
+GET {{base}}/api/cuentacorriente/{{crearCliente.response.body.id}}
+Cookie: {{sesionVendedor}}
+
 ### crear cliente sin nombre → 400
 POST {{base}}/api/clientes
 Cookie: {{sesionAdmin}}
@@ -413,3 +418,75 @@ Content-Type: application/json
 #
 # Usar el cliente de prueba de la sección 2, que ya tiene deuda por la venta
 # fiada de la sección 3: {{crearCliente.response.body.id}}
+
+### cliente de prueba con deuda → 200, con pendientes, totalDeuda y saldoAFavor
+# Revisar que pendientes incluya el producto de la venta fiada.
+# @name estadoCuentaPrueba
+GET {{base}}/api/cuentacorriente/{{crearCliente.response.body.id}}
+Cookie: {{sesionVendedor}}
+
+### cliente inexistente → 404
+GET {{base}}/api/cuentacorriente/999999
+Cookie: {{sesionAdmin}}
+
+### id que no es un número → 400
+GET {{base}}/api/cuentacorriente/abc
+Cookie: {{sesionAdmin}}
+
+### página inválida → 400
+GET {{base}}/api/cuentacorriente/{{crearCliente.response.body.id}}?pagina=0
+Cookie: {{sesionVendedor}}
+
+### sin sesión → 401
+GET {{base}}/api/cuentacorriente/{{crearCliente.response.body.id}}
+
+### monto menor al producto más antiguo → 200, pagados: [] y todo a saldo a favor
+# Confirmar que subtotalActual del pendiente más antiguo sea mayor a 0.01.
+# @name cobranzaSaldoAFavor
+POST {{base}}/api/cobranza
+Cookie: {{sesionVendedor}}
+Content-Type: application/json
+
+{ "clienteid": {{crearCliente.response.body.id}}, "monto": 0.01 }
+
+### sumar saldo a favor y cubrir el producto más antiguo → 200, usa saldo y lo paga
+# El monto es el subtotal actual del pendiente más antiguo; revisar que
+# saldoAFavorUsado sea mayor a 0 y que el producto figure en pagados.
+POST {{base}}/api/cobranza
+Cookie: {{sesionVendedor}}
+Content-Type: application/json
+
+{ "clienteid": {{crearCliente.response.body.id}}, "monto": {{estadoCuentaPrueba.response.body.$.pendientes[0].subtotalActual}} }
+
+### monto 0 → 400
+POST {{base}}/api/cobranza
+Cookie: {{sesionVendedor}}
+Content-Type: application/json
+
+{ "clienteid": {{crearCliente.response.body.id}}, "monto": 0 }
+
+### monto con 3 decimales → 400
+POST {{base}}/api/cobranza
+Cookie: {{sesionVendedor}}
+Content-Type: application/json
+
+{ "clienteid": {{crearCliente.response.body.id}}, "monto": 1.237 }
+
+### body vacío → 400
+POST {{base}}/api/cobranza
+Cookie: {{sesionVendedor}}
+Content-Type: application/json
+
+
+### cliente inexistente → 404
+POST {{base}}/api/cobranza
+Cookie: {{sesionAdmin}}
+Content-Type: application/json
+
+{ "clienteid": 999999, "monto": 0.01 }
+
+### sin sesión → 401
+POST {{base}}/api/cobranza
+Content-Type: application/json
+
+{ "clienteid": {{crearCliente.response.body.id}}, "monto": 0.01 }
