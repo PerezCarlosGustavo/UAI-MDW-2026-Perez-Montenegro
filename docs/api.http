@@ -1,0 +1,492 @@
+# Pruebas de la API — Almacén POS
+#
+# Cómo se usa:
+#   1. Instalar la extensión "REST Client" (humao.rest-client) en VS Code.
+#   2. Levantar el proyecto con `npm run dev`.
+#   3. Completar docs/.env (ver más abajo).
+#   4. Apretar el "Send Request" que aparece arriba de cada request.
+#
+# Cada bloque que empieza con ### es una request independiente. Al lado de la
+# flecha está el status que TIENE que devolver: si devuelve otro, hay un bug.
+#
+# Algunas requests le ponen nombre a su respuesta con `# @name` para que las
+# de abajo usen el id que se creó, sin copiar ids a mano. Por eso conviene
+# correr cada sección de arriba hacia abajo.
+#
+# ⚠️ LA BASE ES COMPARTIDA CON PRODUCCIÓN. Todo lo que se crea acá (productos,
+# clientes, ventas) aparece también en la URL pública. Los registros de prueba
+# se llaman "PRUEBA api.http" y al final de cada sección se dan de baja. Las
+# ventas no se pueden borrar (son inmutables, ADR 0006): no las corran de más.
+
+# ---------------------------------------------------------------------------
+# Variables
+# ---------------------------------------------------------------------------
+# El valor de una variable es todo lo que sigue al `=`: no le pongan
+# comentarios al lado.
+
+@base = http://localhost:3000
+# @base = https://almacenpos-mdw.vercel.app
+
+# ---------------------------------------------------------------------------
+# Sesiones (clase 6)
+# ---------------------------------------------------------------------------
+# Las cookies NO se escriben acá: este archivo se sube al repo. Se leen de
+# docs/.env (en el .gitignore). Copiar docs/.env.example a docs/.env y seguir
+# las instrucciones de ese archivo.
+#
+# En producción la cookie se llama `__Secure-next-auth.session-token`: para
+# probar contra Vercel hay que cambiar el nombre en estas dos líneas.
+
+@sesionAdmin = next-auth.session-token={{$dotenv SESION_ADMIN}}
+@sesionVendedor = next-auth.session-token={{$dotenv SESION_VENDEDOR}}
+
+
+###############################################################################
+# 1. PRODUCTOS — CRUD completo (DELETE es baja lógica)
+###############################################################################
+
+### listar productos activos → 200
+# @name listarProductos
+GET {{base}}/api/productos
+Cookie: {{sesionVendedor}}
+
+### sin sesión → 401
+GET {{base}}/api/productos
+
+### crear producto (ADMIN) → 201
+# @name crearProducto
+POST {{base}}/api/productos
+Cookie: {{sesionAdmin}}
+Content-Type: application/json
+
+{
+  "categoriaid": {{listarProductos.response.body.$[0].categoriaid}},
+  "nombre": "PRUEBA api.http",
+  "preciolista": 1000,
+  "permitestock": true,
+  "stockactual": 5
+}
+
+### crear producto siendo VENDEDOR → 403
+POST {{base}}/api/productos
+Cookie: {{sesionVendedor}}
+Content-Type: application/json
+
+{ "categoriaid": 1, "nombre": "No debería crearse", "preciolista": 100 }
+
+### crear producto sin nombre y con precio negativo → 400
+POST {{base}}/api/productos
+Cookie: {{sesionAdmin}}
+Content-Type: application/json
+
+{ "categoriaid": 1, "nombre": "", "preciolista": -5 }
+
+### crear producto con una categoría que no existe → 409
+POST {{base}}/api/productos
+Cookie: {{sesionAdmin}}
+Content-Type: application/json
+
+{ "categoriaid": 999999, "nombre": "PRUEBA categoría inexistente", "preciolista": 100 }
+
+### crear producto con un código de barras repetido → 409
+# 7790036000565 es el jugo que carga el seed.
+POST {{base}}/api/productos
+Cookie: {{sesionAdmin}}
+Content-Type: application/json
+
+{ "categoriaid": 1, "nombre": "PRUEBA código repetido", "preciolista": 100, "codigobarra": "7790036000565" }
+
+### ver el producto creado → 200
+GET {{base}}/api/productos/{{crearProducto.response.body.id}}
+Cookie: {{sesionVendedor}}
+
+### ver un producto que no existe → 404
+GET {{base}}/api/productos/999999
+Cookie: {{sesionAdmin}}
+
+### id que no es un número → 400
+GET {{base}}/api/productos/abc
+Cookie: {{sesionAdmin}}
+
+### actualizar el precio (ADMIN) → 200
+PUT {{base}}/api/productos/{{crearProducto.response.body.id}}
+Cookie: {{sesionAdmin}}
+Content-Type: application/json
+
+{ "preciolista": 1200 }
+
+### actualizar siendo VENDEDOR → 403
+PUT {{base}}/api/productos/{{crearProducto.response.body.id}}
+Cookie: {{sesionVendedor}}
+Content-Type: application/json
+
+{ "preciolista": 1 }
+
+### actualizar un producto que no existe → 404
+PUT {{base}}/api/productos/999999
+Cookie: {{sesionAdmin}}
+Content-Type: application/json
+
+{ "preciolista": 1200 }
+
+### dar de baja siendo VENDEDOR → 403
+DELETE {{base}}/api/productos/{{crearProducto.response.body.id}}
+Cookie: {{sesionVendedor}}
+
+### dar de baja el producto de prueba (ADMIN) → 200, con "activo": false
+DELETE {{base}}/api/productos/{{crearProducto.response.body.id}}
+Cookie: {{sesionAdmin}}
+
+
+###############################################################################
+# 2. CLIENTES — CRUD completo (DELETE es baja lógica)
+###############################################################################
+
+### listar clientes activos (id y nombre) → 200
+GET {{base}}/api/clientes
+Cookie: {{sesionVendedor}}
+
+### listar incluyendo inactivos → 200
+GET {{base}}/api/clientes?incluirInactivos=true
+Cookie: {{sesionAdmin}}
+
+### query inválido → 400
+GET {{base}}/api/clientes?incluirInactivos=si
+Cookie: {{sesionAdmin}}
+
+### sin sesión → 401
+GET {{base}}/api/clientes
+
+### crear cliente (VENDEDOR también puede) → 201
+# @name crearCliente
+POST {{base}}/api/clientes
+Cookie: {{sesionVendedor}}
+Content-Type: application/json
+
+{ "nombre": "PRUEBA api.http", "telefono": "3415550000" }
+
+### cliente recién creado sin cuenta corriente → 200, totalDeuda: 0
+# Ejecutar antes de la venta fiada de la sección 3.
+GET {{base}}/api/cuentacorriente/{{crearCliente.response.body.id}}
+Cookie: {{sesionVendedor}}
+
+### crear cliente sin nombre → 400
+POST {{base}}/api/clientes
+Cookie: {{sesionAdmin}}
+Content-Type: application/json
+
+{ "nombre": "" }
+
+### crear cliente con un documento repetido → 409
+# "0" es el documento de Consumidor Final (seed).
+POST {{base}}/api/clientes
+Cookie: {{sesionAdmin}}
+Content-Type: application/json
+
+{ "nombre": "PRUEBA documento repetido", "documento": "0" }
+
+### ver el cliente creado → 200
+GET {{base}}/api/clientes/{{crearCliente.response.body.id}}
+Cookie: {{sesionVendedor}}
+
+### ver un cliente que no existe → 404
+GET {{base}}/api/clientes/999999
+Cookie: {{sesionAdmin}}
+
+### editar cliente (ADMIN) → 200
+PUT {{base}}/api/clientes/{{crearCliente.response.body.id}}
+Cookie: {{sesionAdmin}}
+Content-Type: application/json
+
+{ "telefono": "3415559999" }
+
+### editar cliente siendo VENDEDOR → 403
+PUT {{base}}/api/clientes/{{crearCliente.response.body.id}}
+Cookie: {{sesionVendedor}}
+Content-Type: application/json
+
+{ "telefono": "3415559999" }
+
+### dar de baja siendo VENDEDOR → 403
+DELETE {{base}}/api/clientes/{{crearCliente.response.body.id}}
+Cookie: {{sesionVendedor}}
+
+# La baja del cliente de prueba está al final de la sección 3: primero se usa
+# para una venta fiada, y así se prueba que un cliente con deuda no se puede
+# dar de baja.
+
+
+###############################################################################
+# 3. VENTAS — el precio lo pone el servidor; VENDEDOR ve solo las suyas
+###############################################################################
+
+### registrar venta al contado → 201
+# Solo se manda producto y cantidad. El precio y el total salen del catálogo.
+# @name ventaContado
+POST {{base}}/api/ventas
+Cookie: {{sesionVendedor}}
+Content-Type: application/json
+
+{
+  "tipopago": 0,
+  "detalles": [
+    { "productoid": {{listarProductos.response.body.$[0].id}}, "cantidad": 1 }
+  ]
+}
+
+### el precio que manda el cliente se ignora → 201 con el precio del catálogo
+# Mirar en la respuesta que preciounitario NO sea 1.
+POST {{base}}/api/ventas
+Cookie: {{sesionVendedor}}
+Content-Type: application/json
+
+{
+  "tipopago": 0,
+  "total": 1,
+  "detalles": [
+    { "productoid": {{listarProductos.response.body.$[0].id}}, "cantidad": 1, "preciounitario": 1, "subtotal": 1 }
+  ]
+}
+
+### venta sin productos → 400
+POST {{base}}/api/ventas
+Cookie: {{sesionVendedor}}
+Content-Type: application/json
+
+{ "tipopago": 0, "detalles": [] }
+
+### tipo de pago desconocido → 400
+POST {{base}}/api/ventas
+Cookie: {{sesionVendedor}}
+Content-Type: application/json
+
+{ "tipopago": 7, "detalles": [{ "productoid": 1, "cantidad": 1 }] }
+
+### producto que no existe → 409
+POST {{base}}/api/ventas
+Cookie: {{sesionVendedor}}
+Content-Type: application/json
+
+{ "tipopago": 0, "detalles": [{ "productoid": 999999, "cantidad": 1 }] }
+
+### venta en cuenta corriente sin cliente → 409
+POST {{base}}/api/ventas
+Cookie: {{sesionVendedor}}
+Content-Type: application/json
+
+{ "tipopago": 1, "detalles": [{ "productoid": {{listarProductos.response.body.$[0].id}}, "cantidad": 1 }] }
+
+### venta en cuenta corriente al cliente de prueba → 201
+# Genera la cuenta corriente del cliente y un movimiento de deuda por producto.
+POST {{base}}/api/ventas
+Cookie: {{sesionVendedor}}
+Content-Type: application/json
+
+{
+  "clienteid": {{crearCliente.response.body.id}},
+  "tipopago": 1,
+  "detalles": [{ "productoid": {{listarProductos.response.body.$[0].id}}, "cantidad": 1 }]
+}
+
+### sin sesión → 401
+POST {{base}}/api/ventas
+Content-Type: application/json
+
+{ "tipopago": 0, "detalles": [{ "productoid": 1, "cantidad": 1 }] }
+
+### listar ventas → 200 (VENDEDOR: solo las suyas)
+GET {{base}}/api/ventas
+Cookie: {{sesionVendedor}}
+
+### listar ventas → 200 (ADMIN: todas)
+GET {{base}}/api/ventas?pagina=1
+Cookie: {{sesionAdmin}}
+
+### página inválida → 400
+GET {{base}}/api/ventas?pagina=0
+Cookie: {{sesionAdmin}}
+
+### ver una venta propia → 200
+GET {{base}}/api/ventas/{{ventaContado.response.body.id}}
+Cookie: {{sesionVendedor}}
+
+### el ADMIN ve cualquier venta → 200
+GET {{base}}/api/ventas/{{ventaContado.response.body.id}}
+Cookie: {{sesionAdmin}}
+
+### una venta de otro usuario → 404 (no 403: para él no existe)
+# Primero registrar una venta como ADMIN y pedirla como VENDEDOR.
+# @name ventaDelAdmin
+POST {{base}}/api/ventas
+Cookie: {{sesionAdmin}}
+Content-Type: application/json
+
+{ "tipopago": 0, "detalles": [{ "productoid": {{listarProductos.response.body.$[0].id}}, "cantidad": 1 }] }
+
+###
+GET {{base}}/api/ventas/{{ventaDelAdmin.response.body.id}}
+Cookie: {{sesionVendedor}}
+
+### mis ventas (VENDEDOR) → 200
+GET {{base}}/api/ventas/mias
+Cookie: {{sesionVendedor}}
+
+### mis ventas siendo ADMIN → 403
+GET {{base}}/api/ventas/mias
+Cookie: {{sesionAdmin}}
+
+### dar de baja un cliente con deuda en cuenta corriente → 409
+DELETE {{base}}/api/clientes/{{crearCliente.response.body.id}}
+Cookie: {{sesionAdmin}}
+
+
+###############################################################################
+# 4. USUARIOS — ABM solo para ADMIN
+###############################################################################
+
+### listar usuarios (ADMIN) → 200
+GET {{base}}/api/usuarios
+Cookie: {{sesionAdmin}}
+
+### listar los pendientes de aprobación → 200
+GET {{base}}/api/usuarios?rol=PENDIENTE
+Cookie: {{sesionAdmin}}
+
+### rol inválido en el filtro → 400
+GET {{base}}/api/usuarios?rol=JEFE
+Cookie: {{sesionAdmin}}
+
+### listar siendo VENDEDOR → 403
+GET {{base}}/api/usuarios
+Cookie: {{sesionVendedor}}
+
+### sin sesión → 401
+GET {{base}}/api/usuarios
+
+### buscar al ADMIN (para las pruebas de abajo)
+# @name admins
+GET {{base}}/api/usuarios?rol=ADMIN
+Cookie: {{sesionAdmin}}
+
+### un ADMIN no puede sacarse el rol a sí mismo → 409
+# Si hay más de un ADMIN, verificar que el primero de la lista sea el de la
+# sesión; si no, cambiar el $[0].
+PATCH {{base}}/api/usuarios/{{admins.response.body.$[0].id}}
+Cookie: {{sesionAdmin}}
+Content-Type: application/json
+
+{ "rol": "VENDEDOR" }
+
+### cambiar un campo que no se puede (email) → 400
+PATCH {{base}}/api/usuarios/{{admins.response.body.$[0].id}}
+Cookie: {{sesionAdmin}}
+Content-Type: application/json
+
+{ "email": "otro@gmail.com" }
+
+### body vacío → 400
+PATCH {{base}}/api/usuarios/{{admins.response.body.$[0].id}}
+Cookie: {{sesionAdmin}}
+Content-Type: application/json
+
+{}
+
+### usuario que no existe → 404
+PATCH {{base}}/api/usuarios/999999
+Cookie: {{sesionAdmin}}
+Content-Type: application/json
+
+{ "rol": "VENDEDOR" }
+
+### modificar usuarios siendo VENDEDOR → 403
+PATCH {{base}}/api/usuarios/{{admins.response.body.$[0].id}}
+Cookie: {{sesionVendedor}}
+Content-Type: application/json
+
+{ "rol": "VENDEDOR" }
+
+# Aprobar a alguien de verdad (PENDIENTE → VENDEDOR) se hace desde /usuarios,
+# o reemplazando el id en:
+# PATCH {{base}}/api/usuarios/<id>   { "rol": "VENDEDOR" }   → 200
+
+
+###############################################################################
+# 5. CUENTA CORRIENTE Y COBRANZA — Leandro
+###############################################################################
+# GET  /api/cuentacorriente/:clienteid  (estado de la deuda, FIFO)
+# POST /api/cobranza                    (cobro por monto, FIFO sin fraccionar)
+#
+# Usar el cliente de prueba de la sección 2, que ya tiene deuda por la venta
+# fiada de la sección 3: {{crearCliente.response.body.id}}
+
+### cliente de prueba con deuda → 200, con pendientes, totalDeuda y saldoAFavor
+# Revisar que pendientes incluya el producto de la venta fiada.
+# @name estadoCuentaPrueba
+GET {{base}}/api/cuentacorriente/{{crearCliente.response.body.id}}
+Cookie: {{sesionVendedor}}
+
+### cliente inexistente → 404
+GET {{base}}/api/cuentacorriente/999999
+Cookie: {{sesionAdmin}}
+
+### id que no es un número → 400
+GET {{base}}/api/cuentacorriente/abc
+Cookie: {{sesionAdmin}}
+
+### página inválida → 400
+GET {{base}}/api/cuentacorriente/{{crearCliente.response.body.id}}?pagina=0
+Cookie: {{sesionVendedor}}
+
+### sin sesión → 401
+GET {{base}}/api/cuentacorriente/{{crearCliente.response.body.id}}
+
+### monto menor al producto más antiguo → 200, pagados: [] y todo a saldo a favor
+# Confirmar que subtotalActual del pendiente más antiguo sea mayor a 0.01.
+# @name cobranzaSaldoAFavor
+POST {{base}}/api/cobranza
+Cookie: {{sesionVendedor}}
+Content-Type: application/json
+
+{ "clienteid": {{crearCliente.response.body.id}}, "monto": 0.01 }
+
+### sumar saldo a favor y cubrir el producto más antiguo → 200, usa saldo y lo paga
+# El monto es el subtotal actual del pendiente más antiguo; revisar que
+# saldoAFavorUsado sea mayor a 0 y que el producto figure en pagados.
+POST {{base}}/api/cobranza
+Cookie: {{sesionVendedor}}
+Content-Type: application/json
+
+{ "clienteid": {{crearCliente.response.body.id}}, "monto": {{estadoCuentaPrueba.response.body.$.pendientes[0].subtotalActual}} }
+
+### monto 0 → 400
+POST {{base}}/api/cobranza
+Cookie: {{sesionVendedor}}
+Content-Type: application/json
+
+{ "clienteid": {{crearCliente.response.body.id}}, "monto": 0 }
+
+### monto con 3 decimales → 400
+POST {{base}}/api/cobranza
+Cookie: {{sesionVendedor}}
+Content-Type: application/json
+
+{ "clienteid": {{crearCliente.response.body.id}}, "monto": 1.237 }
+
+### body vacío → 400
+POST {{base}}/api/cobranza
+Cookie: {{sesionVendedor}}
+Content-Type: application/json
+
+
+### cliente inexistente → 404
+POST {{base}}/api/cobranza
+Cookie: {{sesionAdmin}}
+Content-Type: application/json
+
+{ "clienteid": 999999, "monto": 0.01 }
+
+### sin sesión → 401
+POST {{base}}/api/cobranza
+Content-Type: application/json
+
+{ "clienteid": {{crearCliente.response.body.id}}, "monto": 0.01 }

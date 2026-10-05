@@ -1,49 +1,106 @@
-/**
- * Configuración de autenticación y autorización.
- *
- * Se completa en la CLASE 6. Hasta entonces, este archivo documenta el
- * contrato que va a tener el resto del proyecto.
- *
- * Las dos funciones de abajo son las únicas formas válidas de saber quién
- * está haciendo un request. Ningún componente ni endpoint debe leer el
- * usuario de otro lado: si el `userId` o el `rol` vienen del cliente,
- * cualquiera puede mentir.
- */
+import { getServerSession } from "next-auth";
+import GoogleProvider from "next-auth/providers/google";
+import type { NextAuthOptions } from "next-auth";
+import type { Rol } from "@prisma/client";
+import { prisma } from "@/lib/db/client";
+import { ErrorAutorizacion } from "@/lib/auth/errores";
 
-export type Rol = "ADMIN" | "USUARIO";
+export const authOptions: NextAuthOptions = {
+  providers: [
+    GoogleProvider({
+      clientId: process.env.AUTH_GOOGLE_ID!,
+      clientSecret: process.env.AUTH_GOOGLE_SECRET!,
+    }),
+  ],
 
-export type UsuarioSesion = {
-  id: string;
-  email: string;
-  nombre: string;
-  rol: Rol;
+  callbacks: {
+    async signIn({ user }) {
+      if (!user.email) {
+        return false;
+      }
+
+      // Todo usuario nuevo entra como PENDIENTE: sin ningún permiso hasta que
+      // un ADMIN lo apruebe desde el ABM de usuarios. `update` queda vacío a
+      // propósito: si ya existe, loguearse no le cambia el rol.
+      await prisma.usuario.upsert({
+        where: { email: user.email },
+        update: {},
+        create: {
+          email: user.email,
+          nombre: user.name ?? "",
+          usuario: user.email,
+          rol: "PENDIENTE",
+        },
+      });
+
+      return true;
+    },
+
+    // Corre en cada request que lee la sesión. Consultamos la base en vez de
+    // confiar en lo que quedó guardado en el token, así un cambio de rol se
+    // aplica sin tener que cerrar sesión (ver ADR 0007).
+    async jwt({ token }) {
+      if (!token.email) {
+        return token;
+      }
+
+      const usuario = await prisma.usuario.findUnique({
+        where: { email: token.email },
+      });
+
+      if (usuario && usuario.activo) {
+        token.id = Number(usuario.id);
+        token.rol = usuario.rol;
+        token.nombre = usuario.nombre;
+      } else {
+        // Si lo borraron o lo desactivaron, el token deja de identificar a
+        // alguien y obtenerUsuario devuelve null.
+        delete token.id;
+        delete token.rol;
+      }
+
+      return token;
+    },
+
+    async session({ session, token }) {
+      if (session.user && token.id && token.rol) {
+        session.user.id = token.id;
+        session.user.rol = token.rol;
+        session.user.nombre = token.nombre ?? "";
+      }
+
+      return session;
+    },
+  },
 };
 
-/**
- * Devuelve el usuario de la sesión, o null si no hay sesión.
- * Se usa cuando la página funciona con y sin usuario logueado.
- */
-export async function obtenerUsuario(): Promise<UsuarioSesion | null> {
-  // TODO (clase 6): leer la sesión real de Auth.js.
-  return null;
+
+export async function obtenerUsuario() {
+  const session = await getServerSession(authOptions);
+
+  // Sin id no hay usuario válido. Antes se completaba con id 0 y rol
+  // VENDEDOR, y eso dejaba pasar una sesión que no correspondía a nadie.
+  if (!session?.user?.id) {
+    return null;
+  }
+
+  return {
+    id: session.user.id,
+    rol: session.user.rol,
+    nombre: session.user.nombre,
+    email: session.user.email,
+  };
 }
 
-/**
- * Devuelve el usuario de la sesión o corta el request.
- * Se usa en todo lo que requiere estar logueado.
- *
- * Si además hay que verificar un rol, se compara acá y no en la UI:
- * esconder un botón no impide que alguien llame al endpoint con Postman.
- */
-export async function requerirUsuario(rol?: Rol): Promise<UsuarioSesion> {
+export async function requerirUsuario(rol?: Rol) {
   const usuario = await obtenerUsuario();
 
   if (!usuario) {
-    throw new Error("No autenticado"); // → 401
+    throw new ErrorAutorizacion(401, "No autenticado");
   }
 
   if (rol && usuario.rol !== rol) {
-    throw new Error("No autorizado"); // → 403
+    throw new ErrorAutorizacion(403, "No autorizado");
   }
 
   return usuario;

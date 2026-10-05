@@ -2,9 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  // Cambiar en la clase 1 por el nombre real del sistema.
-  title: "Proyecto MDW 2026",
-  description: "Sistema desarrollado en Metodologías de Desarrollo Web — UAI",
+  title: "Almacén POS",
+  description: "Punto de venta, stock y cuentas corrientes para comercios de barrio — MDW 2026, UAI",
 };
 
 export default function RootLayout({
