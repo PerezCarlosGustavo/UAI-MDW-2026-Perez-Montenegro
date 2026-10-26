@@ -1,6 +1,8 @@
 import { redirect } from "next/navigation";
 import { obtenerUsuario } from "@/lib/auth";
 import BotonIngresarGoogle from "@/components/BotonIngresarGoogle";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 export const dynamic = "force-dynamic";
 
@@ -24,29 +26,28 @@ export default async function Ingresar({ searchParams }: Props) {
 
   return (
     <main className="flex min-h-screen items-center justify-center px-4 py-12">
-      <div className="w-full max-w-sm rounded-lg border border-slate-200 bg-white p-8 text-slate-900 shadow-sm dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100">
-        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700 dark:text-emerald-400">
-          Punto de venta
-        </p>
-        <h1 className="mt-1 text-2xl font-semibold">Almacén POS</h1>
-        <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
-          Ventas, stock y cuentas corrientes del almacén. Ingresá con tu cuenta de Google.
-        </p>
+      <Card className="w-full max-w-sm">
+        <CardHeader>
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">Punto de venta</p>
+          <CardTitle className="text-2xl">Almacén POS</CardTitle>
+          <CardDescription>
+            Ventas, stock y cuentas corrientes del almacén. Ingresá con tu cuenta de Google.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-6">
+          {error ? (
+            <Alert variant="destructive">
+              <AlertDescription>{mensajeDeError(error)}</AlertDescription>
+            </Alert>
+          ) : null}
 
-        {error ? (
-          <p role="alert" className="mt-6 border-l-4 border-rose-600 bg-rose-50 px-3 py-2 text-sm text-rose-900 dark:bg-rose-950/40 dark:text-rose-100">
-            {mensajeDeError(error)}
-          </p>
-        ) : null}
-
-        <div className="mt-8">
           <BotonIngresarGoogle />
-        </div>
 
-        <p className="mt-6 text-xs text-slate-500 dark:text-slate-400">
-          Si es tu primera vez, tu cuenta queda pendiente hasta que un administrador te asigne un rol.
-        </p>
-      </div>
+          <p className="text-xs text-muted-foreground">
+            Si es tu primera vez, tu cuenta queda pendiente hasta que un administrador te asigne un rol.
+          </p>
+        </CardContent>
+      </Card>
     </main>
   );
 }
