@@ -14,7 +14,7 @@ export default function BotonCerrarSesion() {
       type="button"
       onClick={() => {
         setSaliendo(true);
-        void signOut({ callbackUrl: "/signin" });
+        void signOut({ callbackUrl: "/ingresar" });
       }}
       disabled={saliendo}
       className="rounded border border-slate-400 bg-white px-3 py-1 text-sm font-medium text-slate-900 hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 disabled:opacity-50 dark:border-slate-500 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700"

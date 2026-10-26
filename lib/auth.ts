@@ -6,6 +6,13 @@ import { prisma } from "@/lib/db/client";
 import { ErrorAutorizacion } from "@/lib/auth/errores";
 
 export const authOptions: NextAuthOptions = {
+  // Nuestra pantalla de ingreso, también para los errores. Sin esto NextAuth
+  // muestra su página propia, que pone el texto de la excepción en la URL.
+  pages: {
+    signIn: "/ingresar",
+    error: "/ingresar",
+  },
+
   providers: [
     GoogleProvider({
       clientId: process.env.AUTH_GOOGLE_ID!,

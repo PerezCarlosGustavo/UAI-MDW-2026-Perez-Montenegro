@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic";
 export default async function UsuariosPage() {
   const usuario = await obtenerUsuario();
 
-  if (!usuario) redirect("/signin");
+  if (!usuario) redirect("/ingresar");
 
   // Para quien no es ADMIN, esta pantalla no existe.
   if (usuario.rol !== "ADMIN") notFound();
