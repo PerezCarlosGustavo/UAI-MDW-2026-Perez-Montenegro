@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Button } from "@/components/ui/button";
 
 // El texto no habla de "permiso" a propósito: "no tenés permiso para ver esta
 // venta" confirmaría que existe. "No existe" y "no es tuya" se responden igual,
@@ -9,19 +10,14 @@ import Link from "next/link";
 export default function NoEncontrado() {
   return (
     <main className="mx-auto max-w-2xl px-4 py-12 sm:px-6">
-      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
-        Error 404
-      </p>
-      <h1 className="mt-1 text-3xl font-semibold text-slate-950 dark:text-white">No encontramos lo que buscabas</h1>
-      <p className="mt-3 text-slate-600 dark:text-slate-400">
+      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Error 404</p>
+      <h1 className="mt-1 text-3xl font-semibold">No encontramos lo que buscabas</h1>
+      <p className="mt-3 text-muted-foreground">
         La dirección no corresponde a nada que puedas ver. Puede que el enlace esté mal o que ya no exista.
       </p>
-      <Link
-        href="/"
-        className="mt-6 inline-block rounded-md bg-emerald-700 px-5 py-2.5 text-sm font-semibold text-white hover:bg-emerald-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600 dark:bg-emerald-600 dark:hover:bg-emerald-500"
-      >
-        Volver al inicio
-      </Link>
+      <Button asChild className="mt-6">
+        <Link href="/">Volver al inicio</Link>
+      </Button>
     </main>
   );
 }
