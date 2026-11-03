@@ -54,7 +54,7 @@ export default function FormularioProducto({ accion, categorias, etiquetaGuardar
         {(control) => (
           // Un <select> no toma un defaultValue nuevo después de montarse: la
           // key lo vuelve a crear para que conserve lo elegido si algo falla.
-          <SelectNativo {...control} key={valor("categoriaid")} name="categoriaid" defaultValue={valor("categoriaid")}>
+          <SelectNativo key={valor("categoriaid")} {...control} name="categoriaid" defaultValue={valor("categoriaid")}>
             <option value="">Seleccionar</option>
             {categorias.map((categoria) => (
               <option key={categoria.id} value={String(categoria.id)}>
