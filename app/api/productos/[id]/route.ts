@@ -1,9 +1,9 @@
 import { verificarPermiso } from "@/lib/auth/verificarPermiso";
-import { actualizarProducto, desactivarProducto, obtenerProducto } from "@/lib/db/productos";
+import { modificarProducto } from "@/lib/casos/guardarProducto";
+import { desactivarProducto, obtenerProducto } from "@/lib/db/productos";
 import { responderJson } from "@/lib/utils";
 import { validarProducto } from "@/lib/producto/validaciones";
-import { validarReglasProducto } from "@/lib/producto/reglas";
-import { responderError } from "@/lib/errores";
+import { responderError, responderRechazoProducto } from "@/lib/errores";
 import { actualizarProductoSchema } from "@/lib/schemas/producto";
 
 type Contexto = { params: Promise<{ id: string }> };
@@ -47,17 +47,10 @@ export async function PUT(req: Request, { params }: Contexto) {
       );
     }
 
-    const reglas = await validarReglasProducto(data);
-    if (!reglas.ok) {
-      return Response.json(
-        { error: "Reglas de negocio fallidas", detalles: reglas.errores },
-        { status: 409 }
-      );
-    }
+    const guardado = await modificarProducto(BigInt(id), data);
+    if (!guardado.ok) return responderRechazoProducto(guardado.motivo);
 
-    const producto = await actualizarProducto(BigInt(id), data);
-
-    return responderJson(producto);
+    return responderJson(guardado.producto);
   } catch (error) {
     return responderError("PUT /api/productos/:id", error);
   }
