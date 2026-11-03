@@ -43,3 +43,13 @@ export const listarClientesQuerySchema = z.object({
 
 export type CrearClienteInput = z.infer<typeof crearClienteSchema>;
 export type ActualizarClienteInput = z.infer<typeof actualizarClienteSchema>;
+
+export const clienteCreadoSchema = z.object({
+  id: z.number().int().positive(),
+  nombre: z.string(),
+});
+
+export const errorClienteSchema = z.object({
+  error: z.string(),
+  detalles: z.array(z.string()).optional(),
+});

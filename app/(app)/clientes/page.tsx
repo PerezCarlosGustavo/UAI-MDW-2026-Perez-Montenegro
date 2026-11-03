@@ -1,7 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import AgregarCliente from "@/components/AgregarCliente";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 
 type Cliente = { id: number | string; nombre: string };
 type Pendiente = {
@@ -40,6 +43,7 @@ function textoError(datos: { error?: string; detalles?: string[] }, fallback: st
 }
 
 export default function ClientesPage() {
+  const botonDeuda = useRef<HTMLButtonElement | null>(null);
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [busqueda, setBusqueda] = useState("");
   const [clienteId, setClienteId] = useState("");
@@ -66,7 +70,7 @@ export default function ClientesPage() {
         setClientes(lista);
         setClienteId((actual) => lista.some((cliente) => String(cliente.id) === actual)
           ? actual
-          : String(lista[0]?.id ?? ""));
+          : "");
       } catch (err) {
         if (!controller.signal.aborted) setError(err instanceof Error ? err.message : "Error al cargar clientes.");
       } finally {
@@ -146,10 +150,17 @@ export default function ClientesPage() {
         <span className="text-sm text-slate-500">{clientes.length} clientes</span>
       </header>
 
-      {error ? <div role="alert" className="mb-5 border-l-4 border-rose-600 bg-rose-50 px-4 py-3 text-sm text-rose-900 dark:bg-rose-950/40 dark:text-rose-100">{error}</div> : null}
+      {error && !clienteId ? <div role="alert" className="mb-5 border-l-4 border-rose-600 bg-rose-50 px-4 py-3 text-sm text-rose-900 dark:bg-rose-950/40 dark:text-rose-100">{error}</div> : null}
 
-      <div className="grid gap-8 lg:grid-cols-[minmax(17rem,0.8fr)_minmax(0,1.6fr)]">
+      <div className="grid gap-8">
         <section aria-labelledby="clientes-listado">
+          <AgregarCliente onCreado={(cliente) => {
+            setClientes((actuales) => [...actuales, cliente].sort((a, b) => a.nombre.localeCompare(b.nombre, "es-AR")));
+            setBusqueda("");
+            setPagina(1);
+            setResultado(null);
+            setMensaje(null);
+          }} />
           <div className="mb-4 flex items-baseline justify-between gap-3">
             <h2 id="clientes-listado" className="text-lg font-semibold text-slate-900 dark:text-slate-100">Listado</h2>
             <span className="text-xs text-slate-500">{clientesFiltrados.length} resultados</span>
@@ -170,20 +181,49 @@ export default function ClientesPage() {
                   const seleccionado = String(cliente.id) === clienteId;
                   return (
                     <li key={String(cliente.id)} className="border-b border-slate-100 last:border-0 dark:border-slate-800">
-                      <button
-                        type="button"
-                        aria-current={seleccionado ? "true" : undefined}
-                        onClick={() => {
-                          setClienteId(String(cliente.id));
-                          setPagina(1);
-                          setMensaje(null);
-                          setResultado(null);
-                        }}
-                        className={`flex w-full items-center justify-between gap-3 border-l-4 px-3 py-3 text-left ${seleccionado ? "border-emerald-700 bg-emerald-50 text-emerald-950 dark:bg-emerald-950/40 dark:text-emerald-100" : "border-transparent hover:bg-slate-50 dark:hover:bg-slate-900"}`}
+                      <div
+                        className={`flex items-center justify-between gap-3 border-l-4 px-3 py-3 ${seleccionado ? "border-emerald-700 bg-emerald-50 text-emerald-950 dark:bg-emerald-950/40 dark:text-emerald-100" : "border-transparent"}`}
                       >
-                        <span className="min-w-0 truncate text-sm font-medium">{cliente.nombre}</span>
-                        <span className="shrink-0 text-xs text-slate-500">{seleccionado ? "Seleccionado" : "Ver cuenta"}</span>
-                      </button>
+                        <span className="min-w-0 break-words text-sm font-medium">{cliente.nombre}</span>
+                        <div className="ml-auto flex shrink-0 gap-2" role="group" aria-label={`Acciones de ${cliente.nombre}`}>
+                          <Button type="button" variant="outline" size="icon" disabled title="Editar (próximamente)" aria-label={`Editar a ${cliente.nombre}`}>
+                            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="m16 3 5 5M4 20l4-1L21 6a2 2 0 0 0-5-5L3 14l-1 7Z" />
+                            </svg>
+                          </Button>
+                          <Button type="button" variant="outline" size="icon" disabled title="Eliminar (próximamente)" aria-label={`Eliminar a ${cliente.nombre}`}>
+                            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M3 6h18M9 6V4h6v2M5 6l1 14h12l1-14M10 10v6M14 10v6" />
+                            </svg>
+                          </Button>
+                          <Button
+                            type="button"
+                            size="icon"
+                            title="Mostrar deuda"
+                            aria-label={`Mostrar deuda de ${cliente.nombre}`}
+                            variant={seleccionado ? "default" : "secondary"}
+                            aria-haspopup="dialog"
+                            disabled={cobrando}
+                            onClick={(evento) => {
+                              botonDeuda.current = evento.currentTarget;
+                              if (!seleccionado) {
+                                setEstado(null);
+                                setCargandoCuenta(true);
+                              }
+                              setClienteId(String(cliente.id));
+                              setPagina(1);
+                              setMonto("");
+                              setMensaje(null);
+                              setResultado(null);
+                            }}
+                          >
+                            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z" />
+                              <circle cx="12" cy="12" r="3" />
+                            </svg>
+                          </Button>
+                        </div>
+                      </div>
                     </li>
                   );
                 })}
@@ -192,7 +232,31 @@ export default function ClientesPage() {
           </div>
         </section>
 
-        <section aria-labelledby="cuenta-cliente" className="min-w-0 border-t border-slate-200 pt-6 dark:border-slate-800 lg:border-l lg:border-t-0 lg:pl-8 lg:pt-0">
+        <Dialog open={Boolean(clienteId)} onOpenChange={(abierto) => {
+          if (!abierto && !cobrando) {
+            setClienteId("");
+            setEstado(null);
+            setError(null);
+          }
+        }}>
+          <DialogContent className="max-w-3xl" aria-describedby={undefined}
+            onCloseAutoFocus={(evento) => {
+              evento.preventDefault();
+              botonDeuda.current?.focus();
+            }}
+            onEscapeKeyDown={(evento) => { if (cobrando) evento.preventDefault(); }}
+            onInteractOutside={(evento) => { if (cobrando) evento.preventDefault(); }}
+          >
+            <div className="flex items-center justify-between gap-4">
+              <DialogTitle className="text-xl font-semibold">Deuda de {clienteSeleccionado?.nombre}</DialogTitle>
+              <Button type="button" variant="ghost" size="icon" aria-label="Cerrar" disabled={cobrando} onClick={() => {
+                setClienteId("");
+                setEstado(null);
+                setError(null);
+              }}>×</Button>
+            </div>
+            {error ? <p role="alert" className="text-sm text-destructive">{error}</p> : null}
+        <section aria-labelledby="cuenta-cliente" className="min-w-0">
           {clienteSeleccionado ? <>
             <header className="mb-6 flex flex-wrap items-start justify-between gap-4">
               <div>
@@ -265,6 +329,8 @@ export default function ClientesPage() {
             </div> : null}
           </> : <div className="flex min-h-64 items-center justify-center border-y border-dashed border-slate-300 text-center dark:border-slate-700"><p className="max-w-sm px-6 text-sm text-slate-500">{cargandoClientes ? "Cargando clientes…" : "Seleccioná un cliente para consultar su deuda y registrar un cobro."}</p></div>}
         </section>
+          </DialogContent>
+        </Dialog>
       </div>
     </main>
   );
