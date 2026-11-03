@@ -33,6 +33,11 @@ export default async function Inicio() {
       descripcion: "Contado o cuenta corriente. El precio sale del catálogo.",
     },
     {
+      href: "/productos",
+      titulo: "Productos",
+      descripcion: "Buscar en el catálogo. El administrador carga y actualiza precios.",
+    },
+    {
       href: "/clientes",
       titulo: "Cuentas corrientes",
       descripcion: "Consultar la deuda de un cliente y registrar un cobro.",
