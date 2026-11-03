@@ -41,6 +41,7 @@ export default function Navegacion({ usuario }: Props) {
           {puedeOperar ? (
             <nav aria-label="Principal" className="flex flex-wrap gap-1">
               <EnlaceNavegacion href="/ventas">Ventas</EnlaceNavegacion>
+              <EnlaceNavegacion href="/productos">Productos</EnlaceNavegacion>
               <EnlaceNavegacion href="/clientes">Clientes</EnlaceNavegacion>
               {usuario.rol === "ADMIN" ? (
                 <EnlaceNavegacion href="/usuarios">Usuarios</EnlaceNavegacion>

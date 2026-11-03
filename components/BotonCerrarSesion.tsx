@@ -5,21 +5,22 @@
 
 import { useState } from "react";
 import { signOut } from "next-auth/react";
+import { Button } from "@/components/ui/button";
 
 export default function BotonCerrarSesion() {
   const [saliendo, setSaliendo] = useState(false);
 
   return (
-    <button
-      type="button"
+    <Button
+      variant="outline"
+      size="sm"
       onClick={() => {
         setSaliendo(true);
         void signOut({ callbackUrl: "/ingresar" });
       }}
       disabled={saliendo}
-      className="rounded border border-slate-400 bg-white px-3 py-1 text-sm font-medium text-slate-900 hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 disabled:opacity-50 dark:border-slate-500 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700"
     >
-      {saliendo ? "Cerrando sesión..." : "Cerrar sesión"}
-    </button>
+      {saliendo ? "Cerrando sesión…" : "Cerrar sesión"}
+    </Button>
   );
 }

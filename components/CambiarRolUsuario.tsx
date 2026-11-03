@@ -6,7 +6,15 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { SelectNativo } from "@/components/ui/select-nativo";
 import { ROLES } from "@/lib/schemas/usuario";
+
+const NOMBRE_ROL: Record<(typeof ROLES)[number], string> = {
+  ADMIN: "Administrador",
+  VENDEDOR: "Vendedor",
+  PENDIENTE: "Pendiente",
+};
 
 type Props = {
   id: number;
@@ -53,42 +61,38 @@ export default function CambiarRolUsuario({ id, rol, activo, esUnoMismo }: Props
     <div className="flex flex-wrap items-center gap-3">
       <label className="text-sm">
         <span className="sr-only">Rol</span>
-        <select
+        <SelectNativo
           value={rolElegido}
           onChange={(evento) => setRolElegido(evento.target.value as Props["rol"])}
           disabled={esUnoMismo || guardando}
-          className="rounded border border-slate-400 bg-white px-2 py-1 text-slate-900 dark:border-slate-500 dark:bg-slate-800 dark:text-slate-100"
+          className="w-auto"
         >
           {ROLES.map((opcion) => (
             <option key={opcion} value={opcion}>
-              {opcion}
+              {NOMBRE_ROL[opcion]}
             </option>
           ))}
-        </select>
+        </SelectNativo>
       </label>
 
-      <label className="flex items-center gap-1 text-sm">
+      <label className="flex items-center gap-2 text-sm">
         <input
           type="checkbox"
           checked={activoElegido}
           onChange={(evento) => setActivoElegido(evento.target.checked)}
           disabled={esUnoMismo || guardando}
+          className="size-4 accent-primary"
         />
         Activo
       </label>
 
-      <button
-        type="button"
-        onClick={guardar}
-        disabled={!huboCambios || guardando}
-        className="rounded bg-slate-900 px-3 py-1 text-sm text-white disabled:bg-slate-300"
-      >
-        {guardando ? "Guardando..." : "Guardar"}
-      </button>
+      <Button size="sm" onClick={guardar} disabled={!huboCambios || guardando}>
+        {guardando ? "Guardando…" : "Guardar"}
+      </Button>
 
-      {esUnoMismo ? <span className="text-xs opacity-80">(sos vos)</span> : null}
+      {esUnoMismo ? <span className="text-xs text-muted-foreground">(sos vos)</span> : null}
       {error ? (
-        <p role="alert" className="w-full text-sm text-red-700 dark:text-red-400">
+        <p role="alert" className="w-full text-sm text-destructive">
           Error: {error}
         </p>
       ) : null}

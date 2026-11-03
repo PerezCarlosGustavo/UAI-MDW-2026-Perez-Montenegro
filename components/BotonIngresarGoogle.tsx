@@ -4,19 +4,21 @@
 
 import { useState } from "react";
 import { signIn } from "next-auth/react";
+import { Button } from "@/components/ui/button";
 
 export default function BotonIngresarGoogle() {
   const [redirigiendo, setRedirigiendo] = useState(false);
 
   return (
-    <button
-      type="button"
+    <Button
+      variant="outline"
+      size="lg"
       onClick={() => {
         setRedirigiendo(true);
         void signIn("google", { callbackUrl: "/" });
       }}
       disabled={redirigiendo}
-      className="flex w-full items-center justify-center gap-3 rounded-md border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-900 hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700"
+      className="w-full"
     >
       <svg aria-hidden="true" viewBox="0 0 48 48" className="h-5 w-5">
         <path fill="#FFC107" d="M43.6 20.1H42V20H24v8h11.3c-1.6 4.7-6.1 8-11.3 8-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 8 3l5.7-5.7C34 6.1 29.3 4 24 4 13 4 4 13 4 24s9 20 20 20 20-9 20-20c0-1.3-.1-2.6-.4-3.9z" />
@@ -25,6 +27,6 @@ export default function BotonIngresarGoogle() {
         <path fill="#1976D2" d="M43.6 20.1H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.6-.4-3.9z" />
       </svg>
       {redirigiendo ? "Redirigiendo a Google…" : "Ingresar con Google"}
-    </button>
+    </Button>
   );
 }

@@ -8,6 +8,22 @@
  */
 import { Prisma } from "@prisma/client";
 import { ErrorAutorizacion } from "@/lib/auth/errores";
+import { MENSAJE_RECHAZO_PRODUCTO, type MotivoRechazoProducto } from "@/lib/casos/guardarProducto";
+
+// Un Record y no un if: si aparece un motivo nuevo, el proyecto no compila
+// hasta que alguien decida con qué número se responde.
+const STATUS_RECHAZO_PRODUCTO: Record<MotivoRechazoProducto, number> = {
+  categoria_inexistente: 409,
+  codigo_repetido: 409,
+  producto_inexistente: 404,
+};
+
+export function responderRechazoProducto(motivo: MotivoRechazoProducto) {
+  return Response.json(
+    { error: "Reglas de negocio fallidas", detalles: [MENSAJE_RECHAZO_PRODUCTO[motivo]] },
+    { status: STATUS_RECHAZO_PRODUCTO[motivo] }
+  );
+}
 
 /**
  * `endpoint` va en el log para saber qué ruta falló al leer los logs de Vercel.
