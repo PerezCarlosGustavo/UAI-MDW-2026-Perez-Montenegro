@@ -92,6 +92,22 @@ El recorrido completo, paso a paso, del flujo que da valor al sistema (no un ABM
 7. El sistema ejecuta el algoritmo en el servidor: revaloriza los productos fiados al precio del día de hoy, cancela de forma cronológica (FIFO) los ítems cubiertos al 100% y guarda cualquier resto como saldoAFavor.
 8. El sistema genera el comprobante de liquidación en PDF (formato térmico 58mm) y dispara el correo electrónico automático al cliente.
 
+### Mapa de pantallas
+
+| Pantalla | Dirección | Roles | Paso del flujo | Escribe | Estado |
+|---|---|---|---|---|---|
+| Ingreso | `/ingresar` | Público | 1 | No | Hecha |
+| Inicio | `/` | Todos | 1 | No | Hecha |
+| Punto de venta | `/ventas` | ADMIN, VENDEDOR | 2 a 4 | Registra la venta | Hecha. Búsqueda por código o nombre en revisión; falta el atajo de teclado del paso 3 |
+| Detalle de venta | `/ventas/[id]` | ADMIN, VENDEDOR (solo las suyas) | Después del 4 | No | En revisión (PR #21) |
+| Cuentas corrientes | `/clientes` | ADMIN, VENDEDOR | 5 a 7 | Registra el cobro | Hecha; falta pasarla a Server Component y sumar el alta de cliente (H4) |
+| Productos | `/productos` | ADMIN, VENDEDOR (solo lectura) | Previo al flujo (H2) | No | En revisión |
+| Alta y edición de producto | `/productos/nuevo`, `/productos/[id]/editar` | ADMIN | Previo al flujo (H2) | Crea y edita | En revisión |
+| Usuarios | `/usuarios` | ADMIN | Previo al flujo (H1) | Cambia rol y estado | Hecha |
+| Comprobante | Sin definir | ADMIN, VENDEDOR | 8 | No | Falta. El PDF se genera al vender, pero no hay cómo verlo ni comprobante de cobro |
+
+**A dónde lleva cada formulario.** Después de registrar una venta se queda en `/ventas`, con un enlace a la venta creada: en el mostrador lo siguiente es atender a otro cliente. Después de guardar un producto vuelve a `/productos`, porque un producto no tiene una ficha propia.
+
 ## 6. Reglas de negocio
 
 Las restricciones que **no** son obvias y que la IA no puede adivinar. Estas son las que hay que revisar a mano.

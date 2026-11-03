@@ -6,7 +6,10 @@ Este archivo lo lee tu asistente de IA (Cursor, Copilot, Claude Code, etc.) ante
 
 ## Qué es este proyecto
 
-<Completar en la clase 1: qué hace el sistema, quiénes son los dos roles y cuál es el flujo principal.>
+Almacén POS es un punto de venta para almacenes de barrio: ventas al contado o fiadas, stock y cuentas corrientes. La deuda se guarda en unidades de producto y se cobra al precio del día.
+
+- **Roles:** ADMIN administra catálogo y usuarios y ve todas las ventas. VENDEDOR vende, cobra y ve solo sus ventas. PENDIENTE es quien entra por primera vez y no puede hacer nada hasta que un ADMIN lo apruebe.
+- **Flujo principal:** el vendedor registra una venta fiada a un cliente, y cuando el cliente vuelve a pagar, la cobranza cancela los productos por FIFO y sin fraccionar, y acredita el sobrante como saldo a favor.
 
 ## La especificación
 
