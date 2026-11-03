@@ -1,12 +1,13 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import FormularioVenta from "@/components/FormularioVenta";
 import SinDatos from "@/components/SinDatos";
 import { requerirUsuario } from "@/lib/auth";
 import { PERMISOS } from "@/lib/auth/permisos";
 import { listarClientes } from "@/lib/db/clientes";
-import { listarProductosActivos } from "@/lib/db/productos";
+import { hayProductosParaVender } from "@/lib/db/productos";
 import { listarVentasVisiblesPara } from "@/lib/db/ventas";
 import { formatearFechaHora, formatearPesos } from "@/lib/utils";
 
@@ -22,17 +23,16 @@ export default async function VentasPage() {
   if (!PERMISOS.venta.ver.includes(usuario.rol)) notFound();
 
   // Las tres consultas no dependen entre sí: en paralelo, no en serie.
-  const [productos, clientes, ventas] = await Promise.all([
-    listarProductosActivos(),
+  const [hayProductos, clientes, ventas] = await Promise.all([
+    hayProductosParaVender(),
     listarClientes(),
     // El id de la sesión va adentro de la consulta: un VENDEDOR ve solo las
     // suyas, un ADMIN todas.
     listarVentasVisiblesPara(usuario),
   ]);
 
-  // A un Client Component solo se le pasan datos planos: los Decimal y BigInt
-  // de Prisma se convierten acá.
-  const catalogo = productos.map((p) => ({ id: Number(p.id), nombre: p.nombre, preciolista: Number(p.preciolista) }));
+  // A un Client Component solo se le pasan datos planos: los BigInt de Prisma
+  // se convierten acá.
   const seleccionables = clientes.map((c) => ({ id: Number(c.id), nombre: c.nombre }));
   const recientes = ventas.slice(0, 10);
 
@@ -42,13 +42,20 @@ export default async function VentasPage() {
       <h1 className="mt-1 mb-8 text-3xl font-semibold">Ventas</h1>
 
       <div className="grid gap-10 lg:grid-cols-[minmax(0,1.6fr)_minmax(17rem,0.8fr)]">
-        {catalogo.length === 0 ? (
+        {!hayProductos ? (
           <SinDatos
             titulo="Todavía no hay productos para vender"
             descripcion="Un administrador tiene que cargar el catálogo antes de registrar ventas."
+            accion={
+              PERMISOS.producto.crear.includes(usuario.rol) ? (
+                <Button asChild>
+                  <Link href="/productos/nuevo">Cargar un producto</Link>
+                </Button>
+              ) : undefined
+            }
           />
         ) : (
-          <FormularioVenta productos={catalogo} clientes={seleccionables} />
+          <FormularioVenta clientes={seleccionables} />
         )}
 
         <aside aria-labelledby="ventas-recientes" className="min-w-0 lg:border-l lg:pl-8">
