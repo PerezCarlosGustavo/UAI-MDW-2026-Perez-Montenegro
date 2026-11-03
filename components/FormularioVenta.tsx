@@ -1,55 +1,67 @@
 "use client";
 
 // Client Component porque tiene estado (las líneas de la venta, si está
-// guardando, el resultado) y eventos. Los productos y clientes NO los pide: se
-// los pasa la página, que los leyó en el servidor desde lib/db (clase 8).
-// Escribir sí va por la API (POST /api/ventas), donde están las reglas.
+// guardando, el resultado) y eventos. Los clientes NO los pide: se los pasa la
+// página, que los leyó en el servidor desde lib/db (clase 8). Los productos los
+// busca BuscadorProductos, y escribir va por la API (POST /api/ventas), donde
+// están las reglas.
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
+import BuscadorProductos from "@/components/BuscadorProductos";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SelectNativo } from "@/components/ui/select-nativo";
+import type { ProductoBuscado } from "@/lib/schemas/producto";
 import { formatearPesos } from "@/lib/utils";
 
-export type ProductoDelCatalogo = { id: number; nombre: string; preciolista: number };
 export type ClienteSeleccionable = { id: number; nombre: string };
 
-type Linea = { productoid: string; cantidad: string };
+type Linea = { productoid: number; nombre: string; preciolista: number; cantidad: string };
 
 type Resultado =
   | { tipo: "ok"; ventaId: number; advertencias: string[] }
   | { tipo: "error"; mensaje: string };
 
-const lineaVacia: Linea = { productoid: "", cantidad: "1" };
-
 type Props = {
-  productos: ProductoDelCatalogo[];
   clientes: ClienteSeleccionable[];
 };
 
-export default function FormularioVenta({ productos, clientes }: Props) {
+export default function FormularioVenta({ clientes }: Props) {
   const router = useRouter();
   const [clienteid, setClienteid] = useState("");
   const [tipopago, setTipopago] = useState("0");
-  const [lineas, setLineas] = useState<Linea[]>([{ ...lineaVacia }]);
+  const [lineas, setLineas] = useState<Linea[]>([]);
   const [guardando, setGuardando] = useState(false);
   const [resultado, setResultado] = useState<Resultado | null>(null);
 
-  const precioPorId = useMemo(
-    () => new Map(productos.map((producto) => [String(producto.id), producto.preciolista])),
-    [productos]
-  );
-
   // Solo para mostrar: el total que vale es el que calcula el servidor.
-  const subtotal = (linea: Linea) =>
-    (precioPorId.get(linea.productoid) ?? 0) * (Number(linea.cantidad) || 0);
+  const subtotal = (linea: Linea) => linea.preciolista * (Number(linea.cantidad) || 0);
   const total = lineas.reduce((suma, linea) => suma + subtotal(linea), 0);
 
-  const cambiarLinea = (indice: number, cambios: Partial<Linea>) =>
-    setLineas((actuales) => actuales.map((linea, i) => (i === indice ? { ...linea, ...cambios } : linea)));
+  // Escanear dos veces el mismo producto suma uno, no agrega otra línea.
+  function agregarProducto(producto: ProductoBuscado) {
+    setResultado(null);
+    setLineas((actuales) => {
+      const yaEsta = actuales.some((linea) => linea.productoid === producto.id);
+      if (yaEsta) {
+        return actuales.map((linea) =>
+          linea.productoid === producto.id ? { ...linea, cantidad: String((Number(linea.cantidad) || 0) + 1) } : linea
+        );
+      }
+      return [
+        ...actuales,
+        { productoid: producto.id, nombre: producto.nombre, preciolista: producto.preciolista, cantidad: "1" },
+      ];
+    });
+  }
+
+  const cambiarCantidad = (productoid: number, cantidad: string) =>
+    setLineas((actuales) =>
+      actuales.map((linea) => (linea.productoid === productoid ? { ...linea, cantidad } : linea))
+    );
 
   async function registrar(evento: React.FormEvent<HTMLFormElement>) {
     evento.preventDefault();
@@ -65,7 +77,7 @@ export default function FormularioVenta({ productos, clientes }: Props) {
           clienteid: clienteid ? Number(clienteid) : null,
           tipopago: Number(tipopago),
           detalles: lineas.map((linea) => ({
-            productoid: Number(linea.productoid),
+            productoid: linea.productoid,
             cantidad: Number(linea.cantidad),
           })),
         }),
@@ -87,7 +99,7 @@ export default function FormularioVenta({ productos, clientes }: Props) {
       });
       setClienteid("");
       setTipopago("0");
-      setLineas([{ ...lineaVacia }]);
+      setLineas([]);
       // Vuelve a pedirle la página al servidor: así "Ventas recientes" ya
       // incluye la que se acaba de registrar, sin un fetch de lectura acá.
       router.refresh();
@@ -155,73 +167,63 @@ export default function FormularioVenta({ productos, clientes }: Props) {
         </label>
       </div>
 
-      <fieldset className="grid gap-3">
-        <div className="flex items-baseline justify-between gap-3 border-b pb-2">
-          <legend className="font-semibold">Productos</legend>
-          <Button type="button" variant="link" size="sm" onClick={() => setLineas((a) => [...a, { ...lineaVacia }])}>
-            + Agregar producto
-          </Button>
-        </div>
+      <BuscadorProductos onElegir={agregarProducto} />
 
-        <ul className="grid gap-4">
-          {lineas.map((linea, indice) => (
-            <li
-              key={indice}
-              className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_6rem_8rem_auto] sm:items-end"
-            >
-              <label className="grid gap-1.5 text-sm font-medium">
-                Producto
-                <SelectNativo
-                  required
-                  value={linea.productoid}
-                  onChange={(e) => cambiarLinea(indice, { productoid: e.target.value })}
-                >
-                  <option value="">Seleccionar</option>
-                  {productos.map((producto) => (
-                    <option key={producto.id} value={String(producto.id)}>
-                      {producto.nombre} — {formatearPesos(producto.preciolista)}
-                    </option>
-                  ))}
-                </SelectNativo>
-              </label>
-              <label className="grid gap-1.5 text-sm font-medium">
-                Cantidad
-                <Input
-                  type="number"
-                  inputMode="decimal"
-                  min="0.001"
-                  step="any"
-                  required
-                  value={linea.cantidad}
-                  onChange={(e) => cambiarLinea(indice, { cantidad: e.target.value })}
-                  className="tabular-nums"
-                />
-              </label>
-              <div className="grid gap-1.5 text-sm font-medium">
-                <span>Subtotal</span>
-                <span className="flex h-9 items-center tabular-nums text-muted-foreground">
-                  {formatearPesos(subtotal(linea))}
-                </span>
-              </div>
-              <Button
-                type="button"
-                variant="outline"
-                disabled={lineas.length === 1}
-                onClick={() => setLineas((a) => a.filter((_, i) => i !== indice))}
-                aria-label={`Quitar el producto ${indice + 1}`}
+      <fieldset className="grid gap-3">
+        <legend className="w-full border-b pb-2 font-semibold">Productos</legend>
+
+        {lineas.length === 0 ? (
+          <p className="text-sm text-muted-foreground">Todavía no agregaste productos.</p>
+        ) : (
+          <ul className="grid gap-4">
+            {lineas.map((linea) => (
+              <li
+                key={linea.productoid}
+                className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_6rem_8rem_auto] sm:items-end"
               >
-                Quitar
-              </Button>
-            </li>
-          ))}
-        </ul>
+                <div className="min-w-0 text-sm">
+                  <span className="block font-medium break-words">{linea.nombre}</span>
+                  <span className="text-muted-foreground tabular-nums">{formatearPesos(linea.preciolista)}</span>
+                </div>
+                <label className="grid gap-1.5 text-sm font-medium">
+                  Cantidad
+                  <Input
+                    type="number"
+                    inputMode="decimal"
+                    min="0.001"
+                    step="any"
+                    required
+                    value={linea.cantidad}
+                    onChange={(e) => cambiarCantidad(linea.productoid, e.target.value)}
+                    aria-label={`Cantidad de ${linea.nombre}`}
+                    className="tabular-nums"
+                  />
+                </label>
+                <div className="grid gap-1.5 text-sm font-medium">
+                  <span>Subtotal</span>
+                  <span className="flex h-9 items-center tabular-nums text-muted-foreground">
+                    {formatearPesos(subtotal(linea))}
+                  </span>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setLineas((a) => a.filter((l) => l.productoid !== linea.productoid))}
+                  aria-label={`Quitar ${linea.nombre}`}
+                >
+                  Quitar
+                </Button>
+              </li>
+            ))}
+          </ul>
+        )}
       </fieldset>
 
       <div className="flex flex-wrap items-center justify-between gap-3 border-t pt-5">
         <p className="text-sm text-muted-foreground">
           Los precios salen del catálogo y los confirma el servidor al registrar.
         </p>
-        <Button type="submit" disabled={guardando}>
+        <Button type="submit" disabled={guardando || lineas.length === 0}>
           {guardando ? "Registrando…" : "Registrar venta"}
         </Button>
       </div>
