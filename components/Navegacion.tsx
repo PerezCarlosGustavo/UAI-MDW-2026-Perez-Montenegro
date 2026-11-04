@@ -53,7 +53,7 @@ export default function Navegacion({ usuario }: Props) {
         <div className="flex items-center gap-3">
           <div className="text-right text-sm leading-tight">
             <p className="max-w-[14rem] truncate font-medium">{usuario.nombre || usuario.email}</p>
-            <p className="text-xs text-slate-500 dark:text-slate-400">{NOMBRE_ROL[usuario.rol]}</p>
+            <p className="text-xs text-muted-foreground">{NOMBRE_ROL[usuario.rol]}</p>
           </div>
           <BotonCerrarSesion />
         </div>
