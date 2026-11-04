@@ -17,6 +17,7 @@ const camposClienteSchema = z.object({
     .string()
     .trim()
     .max(50, "El teléfono no puede superar los 50 caracteres")
+    .regex(/^[+\d\s().-]*$/, "El teléfono solo puede contener números, espacios, +, paréntesis, puntos y guiones.")
     .refine((valor) => valor.trim().length === 0 || valor.trim().length >= 6, "El teléfono es inválido.")
     .optional()
     .nullable(),
@@ -43,3 +44,13 @@ export const listarClientesQuerySchema = z.object({
 
 export type CrearClienteInput = z.infer<typeof crearClienteSchema>;
 export type ActualizarClienteInput = z.infer<typeof actualizarClienteSchema>;
+
+export const clienteCreadoSchema = z.object({
+  id: z.number().int().positive(),
+  nombre: z.string(),
+});
+
+export const errorClienteSchema = z.object({
+  error: z.string(),
+  detalles: z.array(z.string()).optional(),
+});

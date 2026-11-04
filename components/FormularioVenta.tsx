@@ -3,8 +3,7 @@
 // Client Component porque tiene estado (las líneas de la venta, si está
 // guardando, el resultado) y eventos. Los clientes NO los pide: se los pasa la
 // página, que los leyó en el servidor desde lib/db (clase 8). Los productos los
-// busca BuscadorProductos, y escribir va por la API (POST /api/ventas), donde
-// están las reglas.
+// busca BuscadorProductos; la venta se registra mediante una Server Action.
 
 import Link from "next/link";
 import { useState } from "react";
@@ -16,6 +15,7 @@ import { Input } from "@/components/ui/input";
 import { SelectNativo } from "@/components/ui/select-nativo";
 import type { ProductoBuscado } from "@/lib/schemas/producto";
 import { formatearPesos } from "@/lib/utils";
+import { registrarVentaAction } from "@/app/(app)/ventas/acciones";
 
 export type ClienteSeleccionable = { id: number; nombre: string };
 
@@ -53,7 +53,12 @@ export default function FormularioVenta({ clientes }: Props) {
       }
       return [
         ...actuales,
-        { productoid: producto.id, nombre: producto.nombre, preciolista: producto.preciolista, cantidad: "1" },
+        {
+          productoid: producto.id,
+          nombre: producto.nombre,
+          preciolista: producto.preciolista,
+          cantidad: "1"
+        },
       ];
     });
   }
@@ -70,32 +75,24 @@ export default function FormularioVenta({ clientes }: Props) {
 
     try {
       // Solo qué y cuánto: precios y total los calcula el servidor.
-      const respuesta = await fetch("/api/ventas", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          clienteid: clienteid ? Number(clienteid) : null,
-          tipopago: Number(tipopago),
-          detalles: lineas.map((linea) => ({
-            productoid: linea.productoid,
-            cantidad: Number(linea.cantidad),
-          })),
-        }),
+      const respuesta = await registrarVentaAction({
+        clienteid: clienteid ? Number(clienteid) : null,
+        tipopago: Number(tipopago),
+        detalles: lineas.map((linea) => ({
+          productoid: linea.productoid,
+          cantidad: Number(linea.cantidad),
+        })),
       });
-      const datos = await respuesta.json().catch(() => null);
 
       if (!respuesta.ok) {
-        const mensaje = Array.isArray(datos?.detalles)
-          ? datos.detalles.join(" ")
-          : datos?.error ?? "No se pudo registrar la venta.";
-        setResultado({ tipo: "error", mensaje });
+        setResultado({ tipo: "error", mensaje: respuesta.mensaje });
         return;
       }
 
       setResultado({
         tipo: "ok",
-        ventaId: datos.id,
-        advertencias: Array.isArray(datos.advertencias) ? datos.advertencias : [],
+        ventaId: respuesta.ventaId,
+        advertencias: respuesta.advertencias,
       });
       setClienteid("");
       setTipopago("0");
@@ -130,7 +127,10 @@ export default function FormularioVenta({ clientes }: Props) {
         <Alert>
           <AlertTitle>Venta registrada</AlertTitle>
           <AlertDescription>
-            <Link href={`/ventas/${resultado.ventaId}`} className="font-medium text-primary underline-offset-4 hover:underline">
+            <Link
+              href={`/ventas/${resultado.ventaId}`}
+              className="font-medium text-primary underline-offset-4 hover:underline"
+            >
               Ver la venta #{resultado.ventaId}
             </Link>
             {/* Stock negativo: la venta se hizo igual (ADR 0004), pero se

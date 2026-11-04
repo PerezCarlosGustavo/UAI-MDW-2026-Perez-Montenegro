@@ -100,11 +100,15 @@ El recorrido completo, paso a paso, del flujo que da valor al sistema (no un ABM
 | Inicio | `/` | Todos | 1 | No | Hecha |
 | Punto de venta | `/ventas` | ADMIN, VENDEDOR | 2 a 4 | Registra la venta | Hecha. Búsqueda por código o nombre en revisión; falta el atajo de teclado del paso 3 |
 | Detalle de venta | `/ventas/[id]` | ADMIN, VENDEDOR (solo las suyas) | Después del 4 | No | En revisión (PR #21) |
-| Cuentas corrientes | `/clientes` | ADMIN, VENDEDOR | 5 a 7 | Registra el cobro | Hecha; falta pasarla a Server Component y sumar el alta de cliente (H4) |
+| Clientes | `/clientes` | ADMIN, VENDEDOR | 5 | No | Hecha: listado en servidor y buscador interactivo. Agregar navega al alta; Mostrar deuda navega al detalle |
+| Alta de cliente | `/clientes/nuevo` | ADMIN, VENDEDOR | Previo al 4 (H4) | Crea un cliente mediante Server Action | Hecha: formulario en pantalla propia |
+| Cuenta corriente del cliente | `/clientes/[id]` | ADMIN, VENDEDOR | 5 a 7 | Registra el cobro por Server Action y refresca la página | Hecha: lectura en servidor y `notFound()` si no existe |
 | Productos | `/productos` | ADMIN, VENDEDOR (solo lectura) | Previo al flujo (H2) | No | En revisión |
 | Alta y edición de producto | `/productos/nuevo`, `/productos/[id]/editar` | ADMIN | Previo al flujo (H2) | Crea y edita | En revisión |
 | Usuarios | `/usuarios` | ADMIN | Previo al flujo (H1) | Cambia rol y estado | Hecha |
 | Comprobante | Sin definir | ADMIN, VENDEDOR | 8 | No | Falta. El PDF se genera al vender, pero no hay cómo verlo ni comprobante de cobro |
+
+**Navegación de clientes.** El alta y la cuenta corriente se muestran en pantallas propias, sin modales. Agregar abre `/clientes/nuevo`; al guardar correctamente o cancelar se vuelve a `/clientes`. Mostrar deuda abre `/clientes/[id]`. Editar y Eliminar permanecen visibles y deshabilitados hasta su implementación.
 
 **A dónde lleva cada formulario.** Después de registrar una venta se queda en `/ventas`, con un enlace a la venta creada: en el mostrador lo siguiente es atender a otro cliente. Después de guardar un producto vuelve a `/productos`, porque un producto no tiene una ficha propia.
 
