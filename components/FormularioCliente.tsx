@@ -2,26 +2,25 @@
 
 import { useState, type FormEvent } from "react";
 import { z } from "zod";
-import BotonAgregar from "@/components/BotonAgregar";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
 import Campo from "@/components/Campo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { crearClienteSchema, clienteCreadoSchema } from "@/lib/schemas/cliente";
+import { crearClienteSchema } from "@/lib/schemas/cliente";
 import { crearClienteAction } from "@/app/(app)/clientes/acciones";
 
-type Props = { onCreado: (cliente: z.infer<typeof clienteCreadoSchema>) => void };
 
-export default function AgregarCliente({ onCreado }: Props) {
+export default function FormularioCliente() {
+  const router = useRouter();
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [errores, setErrores] = useState<z.inferFlattenedErrors<typeof crearClienteSchema>["fieldErrors"]>({});
-  const [mensaje, setMensaje] = useState<string | null>(null);
 
-  async function guardar(evento: FormEvent<HTMLFormElement>, cerrar: () => void) {
+  async function guardar(evento: FormEvent<HTMLFormElement>) {
     evento.preventDefault();
     if (guardando) return;
     setError(null);
-    setMensaje(null);
     const formulario = new FormData(evento.currentTarget);
     const resultado = crearClienteSchema.safeParse({
       nombre: formulario.get("nombre"),
@@ -41,9 +40,8 @@ export default function AgregarCliente({ onCreado }: Props) {
         setError(respuesta.mensaje);
         return;
       }
-      onCreado(respuesta.cliente);
-      setMensaje("Cliente creado correctamente.");
-      cerrar();
+      router.push("/clientes");
+      router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "No se pudo crear el cliente.");
     } finally {
@@ -52,11 +50,8 @@ export default function AgregarCliente({ onCreado }: Props) {
   }
 
   return (
-    <div className="mb-6 flex flex-col items-end">
-      <BotonAgregar titulo="Agregar cliente" ocupado={guardando}>
-        {(cerrar) => (
           <form
-            onSubmit={(evento) => void guardar(evento, cerrar)}
+            onSubmit={(evento) => void guardar(evento)}
             className="grid gap-4"
             noValidate
             aria-busy={guardando}
@@ -85,12 +80,10 @@ export default function AgregarCliente({ onCreado }: Props) {
             {error ? <p role="alert" className="text-sm text-destructive">{error}</p> : null}
             <div className="flex gap-2">
               <Button type="submit" disabled={guardando}>{guardando ? "Guardando…" : "Guardar"}</Button>
-              <Button type="button" variant="outline" disabled={guardando} onClick={cerrar}>Cancelar</Button>
+              <Button asChild variant="outline" disabled={guardando}>
+                {guardando ? <span>Cancelar</span> : <Link href="/clientes">Cancelar</Link>}
+              </Button>
             </div>
           </form>
-        )}
-      </BotonAgregar>
-      {mensaje ? <p role="status" className="mt-3 text-sm text-emerald-700">{mensaje}</p> : null}
-    </div>
   );
 }

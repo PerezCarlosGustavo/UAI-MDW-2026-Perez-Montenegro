@@ -17,6 +17,7 @@ const camposClienteSchema = z.object({
     .string()
     .trim()
     .max(50, "El teléfono no puede superar los 50 caracteres")
+    .regex(/^[+\d\s().-]*$/, "El teléfono solo puede contener números, espacios, +, paréntesis, puntos y guiones.")
     .refine((valor) => valor.trim().length === 0 || valor.trim().length >= 6, "El teléfono es inválido.")
     .optional()
     .nullable(),
