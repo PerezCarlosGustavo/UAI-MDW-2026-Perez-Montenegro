@@ -9,6 +9,7 @@
 **Para quién:** Dueño y vendedores de un local comercial de barrio (almacén, kiosco y venta de bebidas).
 **Qué hace hoy sin el sistema:** Registra ventas en un sistema de escritorio legacy desactualizado, gestionando las cuentas corrientes (fiados) congelando precios en pesos, lo que genera pérdidas de capital frente a la inflación.
 **Qué mejora:** Centraliza el catálogo en la nube, agiliza el cobro en mostrador con escáner e indexa las cuentas corrientes por unidades de producto para preservar el valor del capital de trabajo del comercio.
+**Product Owner:** Carlos Roberto Perez. Las reglas de negocio de la sección 6 se relevaron consultándolo a él: el fiado indexado por unidades, la cancelación FIFO sin fraccionar, el saldo a favor y que la falta de stock no frene la caja.
 
 ## 2. Roles
 
@@ -25,10 +26,11 @@ Los sustantivos que aparecen en las historias de usuario. De acá sale el modelo
 |---|---|---|
 | **Categoria** | Clasificación de rubros del comercio (Bebidas, Kiosco, Limpieza, etc.). | **1-N** con `Producto`. |
 | **Producto** | Artículos comercializados en el almacén con su precio de lista, código de barras, indicador de si controla stock (`permiteStock: boolean`) y stock actual. | **N-1** con `Categoria`, **N-M** con `Venta` (vía `DetalleVenta`), **1-N** con `CuentaCorrienteItem`. |
-| **Cliente** | Clientes registrados para la gestión de Cuenta Corriente y saldos a favor. | **1-N** con `Venta`, **1-N** con `CuentaCorrienteItem`. |
+| **Cliente** | Clientes registrados para la gestión de Cuenta Corriente y saldos a favor. | **1-N** con `Venta`, **1-1** con `CuentaCorriente`. |
 | **Venta** | Cabecera de la transacción realizada en caja (al contado o fiada). | **N-1** con `Cliente` (opcional), **N-1** con `Usuario`, **1-N** con `DetalleVenta`. |
 | **DetalleVenta** | Línea del ticket que resuelve la relación N-M entre Venta y Producto para ventas liquidadas. | **N-1** con `Venta`, **N-1** con `Producto`. |
-| **CuentaCorrienteItem** | Registro granular de unidades físicas fiadas pendientes de revalorización y cobro. | **N-1** con `Cliente`, **N-1** con `Producto`. |
+| **CuentaCorriente** | La cuenta de un cliente. Se crea con su primera venta fiada. | **1-1** con `Cliente`, **1-N** con `CuentaCorrienteMovimiento`. |
+| **CuentaCorrienteMovimiento** | Historial de la cuenta: deuda en unidades, producto liquidado, pago recibido, saldo a favor generado y usado. La deuda y el saldo se calculan desde acá (ADR 0008). | **N-1** con `CuentaCorriente`, **N-1** con `Venta` y `Producto` (opcionales). |
 
 ## 4. Historias de usuario
 
@@ -68,7 +70,7 @@ Criterios de aceptación:
 **Como** *vendedor*, **quiero** ingresar un monto entregado por el cliente para saldar deuda, **para** que el sistema cancele los productos fiados en orden cronológico a precio de hoy y acredite el sobrante.
 
 Criterios de aceptación:
-- [ ] Dado que el cliente entrega dinero en efectivo, cuando el vendedor registra el cobro, el sistema cotiza los ítems pendientes al precio del día, salda al 100% los productos que alcance a cubrir el dinero (FIFO), guarda su precioPagado y acredita cualquier sobrante como saldoAFavor en la ficha del cliente.
+- [ ] Dado que el cliente entrega dinero en efectivo, cuando el vendedor registra el cobro, el sistema cotiza los ítems pendientes al precio del día, salda al 100% los productos que alcance a cubrir el dinero (FIFO), guarda su precioPagado y acredita cualquier sobrante como saldo a favor en la cuenta corriente del cliente.
 - [ ] Caso de error: cuando el dinero entregado no alcanza para cubrir la totalidad del producto más antiguo de la lista, el sistema no fracciona el producto, no lo marca como pagado y acumula todo el dinero como saldoAFavor.
 
 ### H6 — Generación y Envío de Comprobante Digital
@@ -98,13 +100,13 @@ El recorrido completo, paso a paso, del flujo que da valor al sistema (no un ABM
 |---|---|---|---|---|---|
 | Ingreso | `/ingresar` | Público | 1 | No | Hecha |
 | Inicio | `/` | Todos | 1 | No | Hecha |
-| Punto de venta | `/ventas` | ADMIN, VENDEDOR | 2 a 4 | Registra la venta | Hecha. Búsqueda por código o nombre en revisión; falta el atajo de teclado del paso 3 |
-| Detalle de venta | `/ventas/[id]` | ADMIN, VENDEDOR (solo las suyas) | Después del 4 | No | En revisión (PR #21) |
+| Punto de venta | `/ventas` | ADMIN, VENDEDOR | 2 a 4 | Registra la venta | Hecha, con búsqueda por código o nombre; falta el atajo de teclado del paso 3 |
+| Detalle de venta | `/ventas/[id]` | ADMIN, VENDEDOR (solo las suyas) | Después del 4 | No | Hecha |
 | Clientes | `/clientes` | ADMIN, VENDEDOR | 5 | No | Hecha: listado en servidor y buscador interactivo. Agregar navega al alta; Mostrar deuda navega al detalle |
 | Alta de cliente | `/clientes/nuevo` | ADMIN, VENDEDOR | Previo al 4 (H4) | Crea un cliente mediante Server Action | Hecha: formulario en pantalla propia |
 | Cuenta corriente del cliente | `/clientes/[id]` | ADMIN, VENDEDOR | 5 a 7 | Registra el cobro por Server Action y refresca la página | Hecha: lectura en servidor y `notFound()` si no existe |
-| Productos | `/productos` | ADMIN, VENDEDOR (solo lectura) | Previo al flujo (H2) | No | En revisión |
-| Alta y edición de producto | `/productos/nuevo`, `/productos/[id]/editar` | ADMIN | Previo al flujo (H2) | Crea y edita | En revisión |
+| Productos | `/productos` | ADMIN, VENDEDOR (solo lectura) | Previo al flujo (H2) | No | Hecha |
+| Alta y edición de producto | `/productos/nuevo`, `/productos/[id]/editar` | ADMIN | Previo al flujo (H2) | Crea y edita | Hecha |
 | Usuarios | `/usuarios` | ADMIN | Previo al flujo (H1) | Cambia rol y estado | Hecha |
 | Comprobante | Sin definir | ADMIN, VENDEDOR | 8 | No | Falta. El PDF se genera al vender, pero no hay cómo verlo ni comprobante de cobro |
 
@@ -118,7 +120,7 @@ Las restricciones que **no** son obvias y que la IA no puede adivinar. Estas son
 
 - **Indexación por unidades físicas:** Al fiar una compra, el valor adeudado no se congela en pesos; se guardan las unidades de los productos y la deuda total en pesos se calcula dinámicamente multiplicando las unidades pendientes por el precio actualizado en el catálogo.
 - **Cancelación FIFO sin fraccionar:** El cobro por monto entregado salda los ítems pendientes desde el más antiguo al más reciente. Un producto solo se marca como PAGADO si el pozo disponible cubre el 100% de su valor al precio de hoy. No se saldan fracciones de producto.
-- **Acreditación de saldo a favor:** Cualquier sobrante en pesos resultante de un pago que no alcance para cubrir un producto entero, se registra en el campo saldoAFavor del cliente y se utiliza automáticamente como crédito en la siguiente liquidación.
+- **Acreditación de saldo a favor:** Cualquier sobrante en pesos resultante de un pago que no alcance para cubrir un producto entero, se registra como movimiento de saldo a favor en la cuenta corriente y se utiliza automáticamente como crédito en la siguiente liquidación.
 - **Inmutabilidad de ventas al contado o saldadas:** El precio unitario de las ventas al contado o de los productos fiados ya saldados (precioPagado) se congela permanentemente al momento exacto de la transacción de cobro.
 - **Control selectivo de stock (`permiteStock`):** El inventario solo se descuenta para productos que tengan habilitado el indicador `permiteStock = true` (artículos envasados o empaquetados). Los productos fraccionados o pesables (panadería, fiambre) no descuentan stock ni generan alertas de inventario.
 - **Permisividad de stock (Stock Negativo):** La falta de stock registrado en productos con `permiteStock = true` no bloquea la caja. La venta se procesa normalmente dejando el stock en saldo negativo para no paralizar la atención al cliente, requiriendo un ajuste posterior por el administrador.
@@ -198,7 +200,7 @@ Lo que decidimos **no** hacer, para no volver a discutirlo en la clase 12.
 
 ## 11. Glosario
 - POS: Punto de Venta.
-- CuentaCorrienteItem: Unidad física fiada pendiente de pago.
+- CuentaCorrienteMovimiento: Registro del historial de una cuenta corriente; la deuda en unidades es uno de sus tipos.
 - SaldoAFavor: Crédito en pesos disponible para el cliente.
 - FIFO: First In, First Out (orden cronológico).
 - PrecioPagado: Precio final congelado al momento de liquidar un ítem fiado.
