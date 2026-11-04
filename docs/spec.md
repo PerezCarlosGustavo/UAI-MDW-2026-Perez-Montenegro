@@ -102,7 +102,7 @@ El recorrido completo, paso a paso, del flujo que da valor al sistema (no un ABM
 | Detalle de venta | `/ventas/[id]` | ADMIN, VENDEDOR (solo las suyas) | Después del 4 | No | En revisión (PR #21) |
 | Clientes | `/clientes` | ADMIN, VENDEDOR | 5 | No | Hecha: listado en servidor y buscador interactivo. Agregar navega al alta; Mostrar deuda navega al detalle |
 | Alta de cliente | `/clientes/nuevo` | ADMIN, VENDEDOR | Previo al 4 (H4) | Crea un cliente mediante Server Action | Hecha: formulario en pantalla propia |
-| Cuenta corriente del cliente | `/clientes/[id]` | ADMIN, VENDEDOR | 5 a 7 | Registra el cobro por API y refresca la página | Hecha: lectura en servidor y `notFound()` si no existe |
+| Cuenta corriente del cliente | `/clientes/[id]` | ADMIN, VENDEDOR | 5 a 7 | Registra el cobro por Server Action y refresca la página | Hecha: lectura en servidor y `notFound()` si no existe |
 | Productos | `/productos` | ADMIN, VENDEDOR (solo lectura) | Previo al flujo (H2) | No | En revisión |
 | Alta y edición de producto | `/productos/nuevo`, `/productos/[id]/editar` | ADMIN | Previo al flujo (H2) | Crea y edita | En revisión |
 | Usuarios | `/usuarios` | ADMIN | Previo al flujo (H1) | Cambia rol y estado | Hecha |

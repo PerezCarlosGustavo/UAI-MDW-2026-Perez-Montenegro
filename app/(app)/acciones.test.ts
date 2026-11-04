@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { revalidatePath } from "next/cache";
 import { crearClienteAction, registrarCobranzaAction } from "./clientes/acciones";
 import { registrarVentaAction } from "./ventas/acciones";
+import { POST as crearVentaApi } from "../api/ventas/route";
 import { actualizarUsuarioAction } from "./usuarios/acciones";
 
 const db = vi.hoisted(() => ({
@@ -102,6 +103,7 @@ describe("cobranza por Server Action", () => {
     db.registrarCobranza.mockResolvedValue(cobranza);
     expect(await registrarCobranzaAction({ clienteid: 7, monto: 100 })).toEqual({ ok: true, cobranza });
     expect(db.registrarCobranza).toHaveBeenCalledWith(7, 100);
+    expect(revalidatePath).toHaveBeenCalledWith("/clientes/7");
     expect(revalidatePath).toHaveBeenCalledWith("/clientes");
   });
 });
@@ -157,5 +159,43 @@ describe("ventas por Server Action", () => {
       expect(respuesta).toHaveProperty("advertencias", ["La venta se registró, pero no se pudo generar el comprobante."]);
       expect(db.registrarVenta).toHaveBeenCalledOnce();
     } finally { log.mockRestore(); }
+  });
+});
+
+
+describe("ventas por API: comprobante después de guardar", () => {
+  it("responde 201 con advertencia si falla el PDF y guarda una sola vez", async () => {
+    db.buscarProductosParaVenta.mockResolvedValue([{ id: 2, nombre: "Yerba", preciolista: 100, permitestock: false, stockactual: 0, activo: true }]);
+    db.registrarVenta.mockResolvedValue({ id: 9n, total: 100, detalleventa: [] });
+    db.generarTicketVentaPdf.mockRejectedValue(new Error("PDF no disponible"));
+    const log = vi.spyOn(console, "error").mockImplementation(() => {});
+    try {
+      const respuesta = await crearVentaApi(new Request("http://localhost/api/ventas", {
+        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(venta),
+      }));
+      expect(respuesta.status).toBe(201);
+      expect(await respuesta.json()).toMatchObject({
+        advertencias: ["La venta se registró, pero no se pudo generar el comprobante."],
+      });
+      expect(db.registrarVenta).toHaveBeenCalledOnce();
+      expect(db.registrarVenta).toHaveBeenCalledWith(expect.objectContaining({ usuarioid: 1, total: 100 }));
+    } finally {
+      log.mockRestore();
+    }
+  });
+
+  it("no emite comprobante cuando el guardado falla", async () => {
+    db.buscarProductosParaVenta.mockResolvedValue([{ id: 2, nombre: "Yerba", preciolista: 100, permitestock: false, stockactual: 0, activo: true }]);
+    db.registrarVenta.mockRejectedValue(new Error("Base no disponible"));
+    const log = vi.spyOn(console, "error").mockImplementation(() => {});
+    try {
+      const respuesta = await crearVentaApi(new Request("http://localhost/api/ventas", {
+        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(venta),
+      }));
+      expect(respuesta.status).toBe(500);
+      expect(db.generarTicketVentaPdf).not.toHaveBeenCalled();
+    } finally {
+      log.mockRestore();
+    }
   });
 });

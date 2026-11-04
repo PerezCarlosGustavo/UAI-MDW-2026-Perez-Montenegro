@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { crearCobranzaSchema } from "@/lib/schemas/cuentacorriente";
-import { errorClienteSchema } from "@/lib/schemas/cliente";
+import { registrarCobranzaAction } from "@/app/(app)/clientes/acciones";
 
 export default function FormularioCobro({ clienteid }: { clienteid: number }) {
   const router = useRouter();
@@ -28,15 +28,8 @@ export default function FormularioCobro({ clienteid }: { clienteid: number }) {
     enviando.current = true;
     setPendiente(true);
     try {
-      const respuesta = await fetch("/api/cobranza", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(datos.data),
-      });
-      if (!respuesta.ok) {
-        const fallo = errorClienteSchema.safeParse(await respuesta.json());
-        throw new Error(fallo.success ? fallo.data.detalles?.join(" ") || fallo.data.error : "No se pudo registrar el cobro.");
-      }
+      const respuesta = await registrarCobranzaAction(datos.data);
+      if (!respuesta.ok) throw new Error(respuesta.mensaje);
       formulario.reset();
       setMensaje("Cobro registrado correctamente.");
       router.refresh();

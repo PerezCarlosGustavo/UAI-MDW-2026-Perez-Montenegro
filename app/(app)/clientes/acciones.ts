@@ -40,6 +40,7 @@ export async function registrarCobranzaAction(entrada: unknown) {
     const cobranza = await registrarCobranza(datos.data.clienteid, datos.data.monto);
     if (!cobranza) return { ok: false as const, mensaje: "Cliente no encontrado." };
     revalidatePath("/clientes");
+    revalidatePath(`/clientes/${datos.data.clienteid}`);
     return { ok: true as const, cobranza };
   } catch (error) {
     return { ok: false as const, mensaje: mensajeErrorAccion("registrarCobranzaAction", error) };
