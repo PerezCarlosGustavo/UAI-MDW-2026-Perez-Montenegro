@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import AgregarCliente from "@/components/AgregarCliente";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { registrarCobranzaAction } from "./acciones";
 
 type Cliente = { id: number | string; nombre: string };
 type Pendiente = {
@@ -120,14 +121,9 @@ export default function ClientesPage() {
     setMensaje(null);
     setResultado(null);
     try {
-      const response = await fetch("/api/cobranza", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ clienteid: Number(clienteId), monto: Number(monto) }),
-      });
-      const datos = await response.json();
-      if (!response.ok) throw new Error(textoError(datos, "No se pudo registrar el cobro."));
-      setResultado(datos as ResultadoCobranza);
+      const respuesta = await registrarCobranzaAction({ clienteid: Number(clienteId), monto: Number(monto) });
+      if (!respuesta.ok) throw new Error(respuesta.mensaje);
+      setResultado(respuesta.cobranza);
       setMensaje("Cobro registrado correctamente.");
       setMonto("");
       setPagina(1);
@@ -143,14 +139,20 @@ export default function ClientesPage() {
     <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
       <header className="mb-8 flex flex-wrap items-end justify-between gap-4 border-b border-slate-200 pb-5 dark:border-slate-800">
         <div>
-          <Link href="/" className="text-sm text-slate-500 hover:text-emerald-700 dark:hover:text-emerald-300">← Inicio</Link>
+          <Link
+            href="/"
+            className="text-sm text-slate-500 hover:text-emerald-700 dark:hover:text-emerald-300"
+          >← Inicio</Link>
           <p className="mt-4 text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700 dark:text-emerald-400">Gestión de cuentas</p>
           <h1 className="mt-1 text-3xl font-semibold text-slate-950 dark:text-white">Clientes</h1>
         </div>
         <span className="text-sm text-slate-500">{clientes.length} clientes</span>
       </header>
 
-      {error && !clienteId ? <div role="alert" className="mb-5 border-l-4 border-rose-600 bg-rose-50 px-4 py-3 text-sm text-rose-900 dark:bg-rose-950/40 dark:text-rose-100">{error}</div> : null}
+      {error && !clienteId ? <div
+        role="alert"
+        className="mb-5 border-l-4 border-rose-600 bg-rose-50 px-4 py-3 text-sm text-rose-900 dark:bg-rose-950/40 dark:text-rose-100"
+      >{error}</div> : null}
 
       <div className="grid gap-8">
         <section aria-labelledby="clientes-listado">
@@ -180,19 +182,56 @@ export default function ClientesPage() {
                 {clientesFiltrados.map((cliente) => {
                   const seleccionado = String(cliente.id) === clienteId;
                   return (
-                    <li key={String(cliente.id)} className="border-b border-slate-100 last:border-0 dark:border-slate-800">
+                    <li
+                      key={String(cliente.id)}
+                      className="border-b border-slate-100 last:border-0 dark:border-slate-800"
+                    >
                       <div
                         className={`flex items-center justify-between gap-3 border-l-4 px-3 py-3 ${seleccionado ? "border-emerald-700 bg-emerald-50 text-emerald-950 dark:bg-emerald-950/40 dark:text-emerald-100" : "border-transparent"}`}
                       >
                         <span className="min-w-0 break-words text-sm font-medium">{cliente.nombre}</span>
-                        <div className="ml-auto flex shrink-0 gap-2" role="group" aria-label={`Acciones de ${cliente.nombre}`}>
-                          <Button type="button" variant="outline" size="icon" disabled title="Editar (próximamente)" aria-label={`Editar a ${cliente.nombre}`}>
-                            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <div
+                          className="ml-auto flex shrink-0 gap-2"
+                          role="group"
+                          aria-label={`Acciones de ${cliente.nombre}`}
+                        >
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="icon"
+                            disabled
+                            title="Editar (próximamente)"
+                            aria-label={`Editar a ${cliente.nombre}`}
+                          >
+                            <svg
+                              aria-hidden="true"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            >
                               <path d="m16 3 5 5M4 20l4-1L21 6a2 2 0 0 0-5-5L3 14l-1 7Z" />
                             </svg>
                           </Button>
-                          <Button type="button" variant="outline" size="icon" disabled title="Eliminar (próximamente)" aria-label={`Eliminar a ${cliente.nombre}`}>
-                            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="icon"
+                            disabled
+                            title="Eliminar (próximamente)"
+                            aria-label={`Eliminar a ${cliente.nombre}`}
+                          >
+                            <svg
+                              aria-hidden="true"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            >
                               <path d="M3 6h18M9 6V4h6v2M5 6l1 14h12l1-14M10 10v6M14 10v6" />
                             </svg>
                           </Button>
@@ -217,7 +256,15 @@ export default function ClientesPage() {
                               setResultado(null);
                             }}
                           >
-                            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <svg
+                              aria-hidden="true"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            >
                               <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z" />
                               <circle cx="12" cy="12" r="3" />
                             </svg>
@@ -232,14 +279,19 @@ export default function ClientesPage() {
           </div>
         </section>
 
-        <Dialog open={Boolean(clienteId)} onOpenChange={(abierto) => {
-          if (!abierto && !cobrando) {
-            setClienteId("");
-            setEstado(null);
-            setError(null);
-          }
-        }}>
-          <DialogContent className="max-w-3xl" aria-describedby={undefined}
+        <Dialog
+          open={Boolean(clienteId)}
+          onOpenChange={(abierto) => {
+            if (!abierto && !cobrando) {
+              setClienteId("");
+              setEstado(null);
+              setError(null);
+            }
+          }}
+        >
+          <DialogContent
+            className="max-w-3xl"
+            aria-describedby={undefined}
             onCloseAutoFocus={(evento) => {
               evento.preventDefault();
               botonDeuda.current?.focus();
@@ -249,86 +301,130 @@ export default function ClientesPage() {
           >
             <div className="flex items-center justify-between gap-4">
               <DialogTitle className="text-xl font-semibold">Deuda de {clienteSeleccionado?.nombre}</DialogTitle>
-              <Button type="button" variant="ghost" size="icon" aria-label="Cerrar" disabled={cobrando} onClick={() => {
-                setClienteId("");
-                setEstado(null);
-                setError(null);
-              }}>×</Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                aria-label="Cerrar"
+                disabled={cobrando}
+                onClick={() => {
+                  setClienteId("");
+                  setEstado(null);
+                  setError(null);
+                }}
+              >×</Button>
             </div>
             {error ? <p role="alert" className="text-sm text-destructive">{error}</p> : null}
-        <section aria-labelledby="cuenta-cliente" className="min-w-0">
-          {clienteSeleccionado ? <>
-            <header className="mb-6 flex flex-wrap items-start justify-between gap-4">
-              <div>
-                <p className="text-sm text-slate-500 dark:text-slate-400">Cuenta corriente</p>
-                <h2 id="cuenta-cliente" className="mt-1 text-2xl font-semibold text-slate-950 dark:text-white">{clienteSeleccionado.nombre}</h2>
-              </div>
-              <div className="min-w-44 border-l-4 border-amber-500 pl-3">
-                <p className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Deuda actual</p>
-                <p className="mt-1 text-2xl font-semibold tabular-nums text-slate-950 dark:text-white">{cargandoCuenta ? "…" : moneda.format(estado?.totalDeuda ?? 0)}</p>
-              </div>
-            </header>
+            <section aria-labelledby="cuenta-cliente" className="min-w-0">
+              {clienteSeleccionado ? <>
+                <header className="mb-6 flex flex-wrap items-start justify-between gap-4">
+                  <div>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">Cuenta corriente</p>
+                    <h2
+                      id="cuenta-cliente"
+                      className="mt-1 text-2xl font-semibold text-slate-950 dark:text-white"
+                    >{clienteSeleccionado.nombre}</h2>
+                  </div>
+                  <div className="min-w-44 border-l-4 border-amber-500 pl-3">
+                    <p className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Deuda actual</p>
+                    <p className="mt-1 text-2xl font-semibold tabular-nums text-slate-950 dark:text-white">{cargandoCuenta ? "…" : moneda.format(estado?.totalDeuda ?? 0)}</p>
+                  </div>
+                </header>
 
-            <div className="mb-6 grid gap-4 border-y border-slate-200 py-4 sm:grid-cols-2 dark:border-slate-800">
-              <div>
-                <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Saldo a favor</p>
-                <p className="mt-1 text-lg font-medium tabular-nums text-emerald-700 dark:text-emerald-400">{cargandoCuenta ? "…" : moneda.format(estado?.saldoAFavor ?? 0)}</p>
-              </div>
-              <div>
-                <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Productos pendientes</p>
-                <p className="mt-1 text-lg font-medium tabular-nums text-slate-900 dark:text-slate-100">{cargandoCuenta ? "…" : estado?.totalPendientes ?? 0}</p>
-              </div>
-            </div>
-
-            <div className="mb-8">
-              <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
-                <h3 className="font-semibold text-slate-900 dark:text-slate-100">Deuda pendiente · FIFO</h3>
-                {estado && estado.totalPaginas > 0 ? <span className="text-xs text-slate-500">Página {estado.pagina} de {estado.totalPaginas}</span> : null}
-              </div>
-              {cargandoCuenta ? <p className="py-4 text-sm text-slate-500">Actualizando cuenta…</p> : estado?.pendientes.length ? <>
-                <div className="overflow-x-auto">
-                  <table className="w-full min-w-[34rem] text-left text-sm">
-                    <thead className="border-b border-slate-300 text-xs uppercase tracking-wide text-slate-500 dark:border-slate-700">
-                      <tr><th className="py-2 pr-3 font-medium">Producto</th><th className="px-3 py-2 text-right font-medium">Cant.</th><th className="px-3 py-2 text-right font-medium">Precio actual</th><th className="py-2 pl-3 text-right font-medium">Subtotal</th></tr>
-                    </thead>
-                    <tbody>
-                      {estado.pendientes.map((pendiente) => <tr key={pendiente.movimientoid} className="border-b border-slate-100 last:border-0 dark:border-slate-800">
-                        <td className="py-3 pr-3"><span className="block font-medium text-slate-900 dark:text-slate-100">{pendiente.nombre}</span><span className="text-xs text-slate-500">Venta {pendiente.ventaid} · {new Intl.DateTimeFormat("es-AR", { dateStyle: "medium" }).format(new Date(pendiente.fecha))}</span></td>
-                        <td className="px-3 py-3 text-right tabular-nums">{pendiente.cantidad}</td>
-                        <td className="px-3 py-3 text-right tabular-nums">{moneda.format(pendiente.precioUnitario)}</td>
-                        <td className="py-3 pl-3 text-right font-medium tabular-nums">{moneda.format(pendiente.subtotalActual)}</td>
-                      </tr>)}
-                    </tbody>
-                  </table>
-                </div>
-                {estado.totalPaginas > 1 ? <div className="mt-3 flex justify-end gap-2">
-                  <button type="button" disabled={pagina <= 1} onClick={() => setPagina((actual) => Math.max(1, actual - 1))} className="rounded border border-slate-300 px-3 py-1.5 text-sm disabled:opacity-40 dark:border-slate-700">Anterior</button>
-                  <button type="button" disabled={pagina >= estado.totalPaginas} onClick={() => setPagina((actual) => Math.min(estado.totalPaginas, actual + 1))} className="rounded border border-slate-300 px-3 py-1.5 text-sm disabled:opacity-40 dark:border-slate-700">Siguiente</button>
-                </div> : null}
-              </> : <p className="border-y border-slate-200 py-5 text-sm text-slate-500 dark:border-slate-800">Este cliente no tiene productos pendientes.</p>}
-            </div>
-
-            <form onSubmit={registrarCobro} className="border-t border-slate-200 pt-5 dark:border-slate-800">
-              <h3 className="font-semibold text-slate-900 dark:text-slate-100">Registrar cobro</h3>
-              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Se aplica FIFO sin fraccionar. Si el monto no completa el próximo producto, queda como saldo a favor.</p>
-              <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end">
-                <div className="flex-1">
-                  <label htmlFor="monto-cobro" className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">Monto recibido</label>
-                  <div className="flex rounded-md border border-slate-300 bg-white focus-within:border-emerald-600 focus-within:ring-2 focus-within:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-900">
-                    <span className="border-r border-slate-200 px-3 py-2.5 text-sm text-slate-500 dark:border-slate-700">$</span>
-                    <input id="monto-cobro" type="number" inputMode="decimal" min="0.01" step="0.01" required value={monto} onChange={(event) => setMonto(event.target.value)} placeholder="0,00" className="min-w-0 flex-1 bg-transparent px-3 py-2.5 text-sm outline-none" />
+                <div className="mb-6 grid gap-4 border-y border-slate-200 py-4 sm:grid-cols-2 dark:border-slate-800">
+                  <div>
+                    <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Saldo a favor</p>
+                    <p className="mt-1 text-lg font-medium tabular-nums text-emerald-700 dark:text-emerald-400">{cargandoCuenta ? "…" : moneda.format(estado?.saldoAFavor ?? 0)}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Productos pendientes</p>
+                    <p className="mt-1 text-lg font-medium tabular-nums text-slate-900 dark:text-slate-100">{cargandoCuenta ? "…" : estado?.totalPendientes ?? 0}</p>
                   </div>
                 </div>
-                <button type="submit" disabled={cobrando || cargandoCuenta || !monto || Number(monto) <= 0} className="rounded-md bg-emerald-700 px-5 py-2.5 text-sm font-semibold text-white hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-emerald-600 dark:hover:bg-emerald-500">{cobrando ? "Registrando…" : "Registrar cobro"}</button>
-              </div>
-            </form>
 
-            {mensaje ? <div role="status" className="mt-4 border-l-4 border-emerald-600 bg-emerald-50 px-4 py-3 text-sm text-emerald-950 dark:bg-emerald-950/40 dark:text-emerald-100">
-              <p className="font-semibold">{mensaje}</p>
-              {resultado ? <p className="mt-1">{resultado.pagados.length} producto(s) liquidados. Saldo a favor: {moneda.format(resultado.saldoAFavor)}.</p> : null}
-            </div> : null}
-          </> : <div className="flex min-h-64 items-center justify-center border-y border-dashed border-slate-300 text-center dark:border-slate-700"><p className="max-w-sm px-6 text-sm text-slate-500">{cargandoClientes ? "Cargando clientes…" : "Seleccioná un cliente para consultar su deuda y registrar un cobro."}</p></div>}
-        </section>
+                <div className="mb-8">
+                  <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
+                    <h3 className="font-semibold text-slate-900 dark:text-slate-100">Deuda pendiente · FIFO</h3>
+                    {estado && estado.totalPaginas > 0 ? <span className="text-xs text-slate-500">Página {estado.pagina} de {estado.totalPaginas}</span> : null}
+                  </div>
+                  {cargandoCuenta ? <p className="py-4 text-sm text-slate-500">Actualizando cuenta…</p> : estado?.pendientes.length ? <>
+                    <div className="overflow-x-auto">
+                      <table className="w-full min-w-[34rem] text-left text-sm">
+                        <thead className="border-b border-slate-300 text-xs uppercase tracking-wide text-slate-500 dark:border-slate-700">
+                          <tr><th className="py-2 pr-3 font-medium">Producto</th><th className="px-3 py-2 text-right font-medium">Cant.</th><th className="px-3 py-2 text-right font-medium">Precio actual</th><th className="py-2 pl-3 text-right font-medium">Subtotal</th></tr>
+                        </thead>
+                        <tbody>
+                          {estado.pendientes.map((pendiente) => <tr
+                            key={pendiente.movimientoid}
+                            className="border-b border-slate-100 last:border-0 dark:border-slate-800"
+                          >
+                            <td className="py-3 pr-3"><span className="block font-medium text-slate-900 dark:text-slate-100">{pendiente.nombre}</span><span className="text-xs text-slate-500">Venta {pendiente.ventaid} · {new Intl.DateTimeFormat("es-AR", { dateStyle: "medium" }).format(new Date(pendiente.fecha))}</span></td>
+                            <td className="px-3 py-3 text-right tabular-nums">{pendiente.cantidad}</td>
+                            <td className="px-3 py-3 text-right tabular-nums">{moneda.format(pendiente.precioUnitario)}</td>
+                            <td className="py-3 pl-3 text-right font-medium tabular-nums">{moneda.format(pendiente.subtotalActual)}</td>
+                          </tr>)}
+                        </tbody>
+                      </table>
+                    </div>
+                    {estado.totalPaginas > 1 ? <div className="mt-3 flex justify-end gap-2">
+                      <button
+                        type="button"
+                        disabled={pagina <= 1}
+                        onClick={() => setPagina((actual) => Math.max(1, actual - 1))}
+                        className="rounded border border-slate-300 px-3 py-1.5 text-sm disabled:opacity-40 dark:border-slate-700"
+                      >Anterior</button>
+                      <button
+                        type="button"
+                        disabled={pagina >= estado.totalPaginas}
+                        onClick={() => setPagina((actual) => Math.min(estado.totalPaginas, actual + 1))}
+                        className="rounded border border-slate-300 px-3 py-1.5 text-sm disabled:opacity-40 dark:border-slate-700"
+                      >Siguiente</button>
+                    </div> : null}
+                  </> : <p className="border-y border-slate-200 py-5 text-sm text-slate-500 dark:border-slate-800">Este cliente no tiene productos pendientes.</p>}
+                </div>
+
+                <form onSubmit={registrarCobro} className="border-t border-slate-200 pt-5 dark:border-slate-800">
+                  <h3 className="font-semibold text-slate-900 dark:text-slate-100">Registrar cobro</h3>
+                  <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Se aplica FIFO sin fraccionar. Si el monto no completa el próximo producto, queda como saldo a favor.</p>
+                  <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end">
+                    <div className="flex-1">
+                      <label
+                        htmlFor="monto-cobro"
+                        className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300"
+                      >Monto recibido</label>
+                      <div className="flex rounded-md border border-slate-300 bg-white focus-within:border-emerald-600 focus-within:ring-2 focus-within:ring-emerald-600/20 dark:border-slate-700 dark:bg-slate-900">
+                        <span className="border-r border-slate-200 px-3 py-2.5 text-sm text-slate-500 dark:border-slate-700">$</span>
+                        <input
+                          id="monto-cobro"
+                          type="number"
+                          inputMode="decimal"
+                          min="0.01"
+                          step="0.01"
+                          required
+                          value={monto}
+                          onChange={(event) => setMonto(event.target.value)}
+                          placeholder="0,00"
+                          className="min-w-0 flex-1 bg-transparent px-3 py-2.5 text-sm outline-none"
+                        />
+                      </div>
+                    </div>
+                    <button
+                      type="submit"
+                      disabled={cobrando || cargandoCuenta || !monto || Number(monto) <= 0}
+                      className="rounded-md bg-emerald-700 px-5 py-2.5 text-sm font-semibold text-white hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-emerald-600 dark:hover:bg-emerald-500"
+                    >{cobrando ? "Registrando…" : "Registrar cobro"}</button>
+                  </div>
+                </form>
+
+                {mensaje ? <div
+                  role="status"
+                  className="mt-4 border-l-4 border-emerald-600 bg-emerald-50 px-4 py-3 text-sm text-emerald-950 dark:bg-emerald-950/40 dark:text-emerald-100"
+                >
+                  <p className="font-semibold">{mensaje}</p>
+                  {resultado ? <p className="mt-1">{resultado.pagados.length} producto(s) liquidados. Saldo a favor: {moneda.format(resultado.saldoAFavor)}.</p> : null}
+                </div> : null}
+              </> : <div className="flex min-h-64 items-center justify-center border-y border-dashed border-slate-300 text-center dark:border-slate-700"><p className="max-w-sm px-6 text-sm text-slate-500">{cargandoClientes ? "Cargando clientes…" : "Seleccioná un cliente para consultar su deuda y registrar un cobro."}</p></div>}
+            </section>
           </DialogContent>
         </Dialog>
       </div>

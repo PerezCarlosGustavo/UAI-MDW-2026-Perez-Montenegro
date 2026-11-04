@@ -9,6 +9,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { SelectNativo } from "@/components/ui/select-nativo";
 import { ROLES } from "@/lib/schemas/usuario";
+import { actualizarUsuarioAction } from "@/app/(app)/usuarios/acciones";
 
 const NOMBRE_ROL: Record<(typeof ROLES)[number], string> = {
   ADMIN: "Administrador",
@@ -37,15 +38,10 @@ export default function CambiarRolUsuario({ id, rol, activo, esUnoMismo }: Props
     setError(null);
 
     try {
-      const respuesta = await fetch(`/api/usuarios/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ rol: rolElegido, activo: activoElegido }),
-      });
+      const respuesta = await actualizarUsuarioAction(id, { rol: rolElegido, activo: activoElegido });
 
       if (!respuesta.ok) {
-        const cuerpo = await respuesta.json().catch(() => null);
-        throw new Error(cuerpo?.detalles?.join(" ") ?? cuerpo?.error ?? "No se pudo guardar");
+        throw new Error(respuesta.mensaje);
       }
 
       // Vuelve a pedir la página al servidor para que la lista quede al día.

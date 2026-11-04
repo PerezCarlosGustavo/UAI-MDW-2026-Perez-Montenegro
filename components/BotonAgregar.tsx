@@ -27,7 +27,14 @@ export default function BotonAgregar({ titulo, ocupado = false, children }: Prop
       >
         <div className="flex items-center justify-between gap-4">
           <DialogTitle className="text-lg font-semibold">{titulo}</DialogTitle>
-          <Button type="button" variant="ghost" size="icon" aria-label="Cerrar" disabled={ocupado} onClick={() => setAbierto(false)}>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            aria-label="Cerrar"
+            disabled={ocupado}
+            onClick={() => setAbierto(false)}
+          >
             <span aria-hidden="true">×</span>
           </Button>
         </div>

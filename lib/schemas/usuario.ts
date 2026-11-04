@@ -1,6 +1,8 @@
 import { z } from "zod";
 import type { Rol } from "@prisma/client";
 
+export const idUsuarioSchema = z.number().int().positive().safe();
+
 // Los mismos valores que el enum de Prisma. El `satisfies` hace que falle la
 // compilación si alguien agrega un rol acá que no existe en la base.
 export const ROLES = ["ADMIN", "VENDEDOR", "PENDIENTE"] as const satisfies readonly Rol[];

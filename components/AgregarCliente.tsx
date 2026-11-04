@@ -6,7 +6,8 @@ import BotonAgregar from "@/components/BotonAgregar";
 import Campo from "@/components/Campo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { crearClienteSchema, clienteCreadoSchema, errorClienteSchema } from "@/lib/schemas/cliente";
+import { crearClienteSchema, clienteCreadoSchema } from "@/lib/schemas/cliente";
+import { crearClienteAction } from "@/app/(app)/clientes/acciones";
 
 type Props = { onCreado: (cliente: z.infer<typeof clienteCreadoSchema>) => void };
 
@@ -34,17 +35,13 @@ export default function AgregarCliente({ onCreado }: Props) {
     setErrores({});
     setGuardando(true);
     try {
-      const respuesta = await fetch("/api/clientes", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(resultado.data),
-      });
-      const datos: unknown = await respuesta.json();
+      const respuesta = await crearClienteAction(resultado.data);
       if (!respuesta.ok) {
-        const fallo = errorClienteSchema.safeParse(datos);
-        throw new Error(fallo.success ? fallo.data.detalles?.join(" ") || fallo.data.error : "No se pudo crear el cliente.");
+        setErrores(respuesta.errores ?? {});
+        setError(respuesta.mensaje);
+        return;
       }
-      onCreado(clienteCreadoSchema.parse(datos));
+      onCreado(respuesta.cliente);
       setMensaje("Cliente creado correctamente.");
       cerrar();
     } catch (err) {
@@ -58,15 +55,32 @@ export default function AgregarCliente({ onCreado }: Props) {
     <div className="mb-6 flex flex-col items-end">
       <BotonAgregar titulo="Agregar cliente" ocupado={guardando}>
         {(cerrar) => (
-          <form onSubmit={(evento) => void guardar(evento, cerrar)} className="grid gap-4" noValidate aria-busy={guardando}>
+          <form
+            onSubmit={(evento) => void guardar(evento, cerrar)}
+            className="grid gap-4"
+            noValidate
+            aria-busy={guardando}
+          >
             <Campo etiqueta="Nombre" errores={errores.nombre}>
-              {(control) => <Input {...control} name="nombre" required autoComplete="name" disabled={guardando} />}
+              {(control) => <Input
+                {...control}
+                name="nombre"
+                required
+                autoComplete="name"
+                disabled={guardando}
+              />}
             </Campo>
             <Campo etiqueta="Documento (opcional)" errores={errores.documento}>
               {(control) => <Input {...control} name="documento" disabled={guardando} />}
             </Campo>
             <Campo etiqueta="Teléfono (opcional)" errores={errores.telefono}>
-              {(control) => <Input {...control} name="telefono" type="tel" autoComplete="tel" disabled={guardando} />}
+              {(control) => <Input
+                {...control}
+                name="telefono"
+                type="tel"
+                autoComplete="tel"
+                disabled={guardando}
+              />}
             </Campo>
             {error ? <p role="alert" className="text-sm text-destructive">{error}</p> : null}
             <div className="flex gap-2">
