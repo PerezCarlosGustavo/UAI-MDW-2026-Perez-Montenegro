@@ -8,8 +8,6 @@
  *
  * Busca como una persona (`getByLabel`, `getByRole`), nunca por clase o id. Y
  * los valores esperados salen de la spec y del seed, no de correr el código.
- *
- * Falta el paso 8, el comprobante: la pantalla todavía no lo muestra.
  */
 import { expect, test } from "@playwright/test";
 import { SESION } from "./sesiones";
@@ -115,5 +113,14 @@ test("se vende fiado y se cobra por FIFO, al precio del día y sin fraccionar", 
     await expect(page.getByText("No hay productos pendientes")).toBeVisible();
     await expect(page.getByText("Deuda actual").locator("..")).toContainText("0,00");
     await expect(page.getByText("Saldo a favor").first().locator("..")).toContainText("100,00");
+  });
+
+  await test.step("8. el comprobante del cobro se abre en PDF para imprimir", async () => {
+    const direccion = await page.getByRole("link", { name: "Imprimir comprobante" }).getAttribute("href");
+
+    const respuesta = await page.request.get(direccion!);
+    expect(respuesta.status()).toBe(200);
+    expect(respuesta.headers()["content-type"]).toContain("application/pdf");
+    expect((await respuesta.body()).subarray(0, 4).toString()).toBe("%PDF");
   });
 });

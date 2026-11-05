@@ -138,6 +138,15 @@ export default function FormularioVenta({ clientes }: Props) {
             >
               Ver la venta #{resultado.ventaId}
             </Link>
+            {" · "}
+            <a
+              href={`/api/ventas/${resultado.ventaId}/comprobante`}
+              target="_blank"
+              rel="noreferrer"
+              className="font-medium text-primary underline-offset-4 hover:underline"
+            >
+              Imprimir comprobante
+            </a>
             {/* Stock negativo: la venta se hizo igual (ADR 0004), pero se
                 avisa para que el administrador ajuste el inventario. */}
             {resultado.advertencias.length > 0 ? (

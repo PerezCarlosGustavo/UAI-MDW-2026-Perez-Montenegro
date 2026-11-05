@@ -194,6 +194,18 @@ Una venta con su detalle.
 - ADMIN: cualquier venta.
 - VENDEDOR: solo las suyas. Una venta de otro vendedor responde **404**, igual que si no existiera (403 confirmaría que existe).
 
+## GET /api/ventas/:id/comprobante
+El ticket de la venta en PDF (58 mm), para abrir e imprimir. Se genera al pedirlo, así que no depende de Supabase Storage.
+
+- ADMIN: cualquier venta.
+- VENDEDOR: solo las suyas. Una venta de otro vendedor responde **404**.
+- PENDIENTE ✗ → 403
+- Sin sesión ✗ → 401
+
+### Errores
+- 400 → el id no es un número
+- 404 → la venta no existe o no es visible para este usuario
+
 ## GET /api/ventas/mias
 Las ventas del vendedor autenticado. Para un VENDEDOR es lo mismo que `GET /api/ventas`.
 
@@ -305,6 +317,7 @@ Liquida deuda por monto entregado.
 ### Respuesta 200
 ```json
 {
+  "cobranzaid": 501,
   "clienteid": 12,
   "montoRecibido": 5000,
   "pagados": [
@@ -317,6 +330,21 @@ Liquida deuda por monto entregado.
   "saldoAFavor": 0
 }
 ```
+
+`cobranzaid` es el número del cobro: el id de su movimiento de pago. Con ese número se pide el comprobante.
+
+## GET /api/cobranza/:id/comprobante
+El comprobante de liquidación en PDF (58 mm): cliente, monto recibido, productos liquidados y saldo a favor en ese momento. Se puede volver a pedir: no cambia aunque después haya otros cobros.
+
+### Roles
+- ADMIN ✓
+- VENDEDOR ✓
+- PENDIENTE ✗ → 403
+- Sin sesión ✗ → 401
+
+### Errores
+- 400 → el id no es un número
+- 404 → no existe un cobro con ese número
 
 # 8b. Usuarios (ABM, solo ADMIN)
 Quien entra por primera vez con Google queda con rol `PENDIENTE` y no puede usar ningún endpoint (403) hasta que un ADMIN le asigne un rol desde acá.
@@ -397,10 +425,12 @@ El usuario actualizado (mismo formato que en la lista).
 |GET /api/clientes/:id|✓|✓|✗|
 |DELETE /api/clientes/:id|✓|✗|✗|
 |GET /api/ventas|✓|✓|✗|
+|GET /api/ventas/:id/comprobante|✓|✓|✗|
 |GET /api/ventas/mias|✓|✓|✗|
 |POST /api/ventas|✓|✓|✗|
 |GET /api/cuentacorriente/:clienteid|✓|✓|✗|
 |POST /api/cobranza|✓|✓|✗|
+|GET /api/cobranza/:id/comprobante|✓|✓|✗|
 |GET /api/usuarios|✓|✗|✗|
 |PATCH /api/usuarios/:id|✓|✗|✗|
 

@@ -73,12 +73,12 @@ Criterios de aceptación:
 - [ ] Dado que el cliente entrega dinero en efectivo, cuando el vendedor registra el cobro, el sistema cotiza los ítems pendientes al precio del día, salda al 100% los productos que alcance a cubrir el dinero (FIFO), guarda su precioPagado y acredita cualquier sobrante como saldo a favor en la cuenta corriente del cliente.
 - [ ] Caso de error: cuando el dinero entregado no alcanza para cubrir la totalidad del producto más antiguo de la lista, el sistema no fracciona el producto, no lo marca como pagado y acumula todo el dinero como saldoAFavor.
 
-### H6 — Generación y Envío de Comprobante Digital
-**Como** *vendedor*, **quiero** emitir el ticket PDF de compra y enviarlo por email al cliente, **para** entregar constancia de la operación realizada.
+### H6 — Generación de Comprobante para Imprimir
+**Como** *vendedor*, **quiero** imprimir el ticket PDF de la venta o del cobro, **para** entregar constancia de la operación realizada.
 
 Criterios de aceptación:
-- [ ] Dado que se finaliza un cobro o liquidación de deuda, cuando el vendedor confirma el comprobante, el sistema genera el PDF formato térmico 58mm y envía automáticamente el correo mediante la API de Resend.
-- [ ] Caso de error: cuando falla el servicio de correo externo (API Resend), el sistema notifica el fallo sin revertir la transacción de la venta y permite descargar el PDF localmente.
+- [ ] Dado que se finaliza una venta o un cobro, cuando el vendedor elige imprimir el comprobante, el sistema abre el PDF en formato térmico de 58mm.
+- [ ] Caso de error: cuando falla el servicio de almacenamiento externo (Supabase Storage), la venta no se revierte y el comprobante se puede imprimir igual, porque el PDF se genera al pedirlo.
 
 
 ## 5. Flujo principal
@@ -92,7 +92,7 @@ El recorrido completo, paso a paso, del flujo que da valor al sistema (no un ABM
 5. Días después, el cliente regresa al comercio a entregar dinero para saldar su cuenta.
 6. El Vendedor abre la ficha del cliente en el módulo de Cuentas Corrientes e ingresa el monto entregado en efectivo.
 7. El sistema ejecuta el algoritmo en el servidor: revaloriza los productos fiados al precio del día de hoy, cancela de forma cronológica (FIFO) los ítems cubiertos al 100% y guarda cualquier resto como saldoAFavor.
-8. El sistema genera el comprobante de liquidación en PDF (formato térmico 58mm) y dispara el correo electrónico automático al cliente.
+8. El sistema genera el comprobante de liquidación en PDF (formato térmico 58mm) y el Vendedor lo imprime para entregárselo al cliente.
 
 ### Mapa de pantallas
 
@@ -108,7 +108,7 @@ El recorrido completo, paso a paso, del flujo que da valor al sistema (no un ABM
 | Productos | `/productos` | ADMIN, VENDEDOR (solo lectura) | Previo al flujo (H2) | No | Hecha |
 | Alta y edición de producto | `/productos/nuevo`, `/productos/[id]/editar` | ADMIN | Previo al flujo (H2) | Crea y edita | Hecha |
 | Usuarios | `/usuarios` | ADMIN | Previo al flujo (H1) | Cambia rol y estado | Hecha |
-| Comprobante | Sin definir | ADMIN, VENDEDOR | 8 | No | Falta. El PDF se genera al vender, pero no hay cómo verlo ni comprobante de cobro |
+| Comprobante | `/api/ventas/[id]/comprobante`, `/api/cobranza/[id]/comprobante` | ADMIN, VENDEDOR | 8 | No | Hecha: PDF de 58mm que se abre desde la venta y al registrar el cobro. El cobro todavía no se puede reimprimir desde la pantalla |
 
 **Navegación de clientes.** El alta y la cuenta corriente se muestran en pantallas propias, sin modales. Agregar abre `/clientes/nuevo`; al guardar correctamente o cancelar se vuelve a `/clientes`. Mostrar deuda abre `/clientes/[id]`. Editar y Eliminar permanecen visibles y deshabilitados hasta su implementación.
 
@@ -173,8 +173,8 @@ Esta lista es **igual para todos los proyectos**: no hay que adaptarla, hay que 
 
 ## 8. Integración externa
 
-**Cuál:** Supabase Storage para almacenar tickets PDF y @react-pdf/renderer para generarlos. El envío de correo mediante Resend queda previsto para la entrega digital.
-**Para qué:** Guardar el comprobante de la venta en el bucket `Facturas` y generar el PDF que puede entregarse al cliente.
+**Cuál:** Supabase Storage para almacenar tickets PDF y @react-pdf/renderer para generarlos.
+**Para qué:** Guardar el comprobante de la venta en el bucket `Facturas` y generar el PDF que se imprime para el cliente.
 **Qué pasa si se cae:** La subida a Supabase Storage tiene un timeout de 10 segundos. Si falta la configuración, falla la subida o vence el timeout, se registra el error y la operación devuelve `null`; la venta no se revierte y el PDF generado se devuelve y puede guardarse localmente.
 
 ## 9. Fuera de alcance
@@ -182,6 +182,7 @@ Esta lista es **igual para todos los proyectos**: no hay que adaptarla, hay que 
 Lo que decidimos **no** hacer, para no volver a discutirlo en la clase 12.
 
 - Facturación electrónica directa con AFIP / ARCA (WSFE).
+- Envío del comprobante por correo electrónico: el almacén lo entrega impreso en la térmica de 58mm.
 - Control de depósitos remotos o gestión multi-sucursal.
 - Integración por hardware/puerto serie con balanzas electrónicas (los productos pesables/fraccionados no descuentan stock y se cargan definiendo la unidad o monto en el POS).
 - Módulo de compras automatizadas o pedidos automáticos a proveedores.

@@ -6,6 +6,7 @@ import {
   type MovimientoCuentaCorriente,
   type PendienteValorizado,
 } from "@/lib/reglas/calcularFIFO";
+import { armarComprobanteCobro } from "@/lib/reglas/armarComprobanteCobro";
 import { calcularSaldoAFavor } from "@/lib/reglas/calcularSaldoAFavor";
 import { TIPO_MOVIMIENTO_CC } from "@/lib/reglas/tiposMovimientoCuentaCorriente";
 
@@ -190,11 +191,17 @@ export async function registrarCobranza(clienteid: number, monto: number) {
     const valorizados = valorizarPendientes(pendientes, productos);
     const saldoInicial = calcularSaldoAFavor(movimientos).saldo;
     const resultado = calcularFIFO(valorizados, monto, saldoInicial);
-    const nuevosMovimientos: Prisma.cuentacorrientemovimientoCreateManyInput[] = [{
-      cuentacorrienteid: cuenta.id,
-      tipo: TIPO_MOVIMIENTO_CC.PAGO_RECIBIDO,
-      importe: monto,
-    }];
+    // El pago va primero y aparte: su id es el número del cobro, y sus movimientos
+    // son los que le siguen (armarComprobanteCobro).
+    const pago = await tx.cuentacorrientemovimiento.create({
+      data: {
+        cuentacorrienteid: cuenta.id,
+        tipo: TIPO_MOVIMIENTO_CC.PAGO_RECIBIDO,
+        importe: monto,
+      },
+      select: { id: true },
+    });
+    const nuevosMovimientos: Prisma.cuentacorrientemovimientoCreateManyInput[] = [];
 
     if (resultado.saldoAFavorUsado > 0) {
       nuevosMovimientos.push({
@@ -223,7 +230,9 @@ export async function registrarCobranza(clienteid: number, monto: number) {
       });
     }
 
-    await tx.cuentacorrientemovimiento.createMany({ data: nuevosMovimientos });
+    if (nuevosMovimientos.length > 0) {
+      await tx.cuentacorrientemovimiento.createMany({ data: nuevosMovimientos });
+    }
 
     const deudaAntes = redondearImporte(valorizados.reduce(
       (total, pendiente) => total + pendiente.cantidad * pendiente.preciounitario,
@@ -231,6 +240,7 @@ export async function registrarCobranza(clienteid: number, monto: number) {
     ));
 
     return {
+      cobranzaid: Number(pago.id),
       clienteid,
       montoRecibido: monto,
       pagados: resultado.pagados.map((pagado) => ({
@@ -246,6 +256,36 @@ export async function registrarCobranza(clienteid: number, monto: number) {
       saldoAFavorUsado: resultado.saldoAFavorUsado,
       saldoAFavorGenerado: resultado.saldoAFavorGenerado,
       saldoAFavor: resultado.saldoAFavor,
+    };
+  }, { maxWait: 10_000, timeout: 30_000 });
+}
+
+/** Los datos del comprobante de un cobro, por el id de su pago. `null` → 404. */
+export async function obtenerComprobanteCobro(pagoid: number) {
+  return prisma.$transaction(async (tx) => {
+    const pago = await tx.cuentacorrientemovimiento.findFirst({
+      where: { id: BigInt(pagoid), tipo: TIPO_MOVIMIENTO_CC.PAGO_RECIBIDO },
+      select: {
+        cuentacorrienteid: true,
+        cuentacorriente: { select: { cliente: { select: { nombre: true } } } },
+      },
+    });
+    if (!pago) return null;
+
+    const comprobante = armarComprobanteCobro(await listarMovimientos(tx, pago.cuentacorrienteid), pagoid);
+    if (!comprobante) return null;
+
+    const ids = comprobante.liquidados.flatMap((liquidado) => liquidado.productoid ?? []);
+    const productos = new Map((await listarProductos(tx, ids)).map((producto) => [producto.id, producto.nombre]));
+
+    return {
+      ...comprobante,
+      cliente: pago.cuentacorriente.cliente.nombre,
+      liquidados: comprobante.liquidados.map((liquidado) => ({
+        nombre: productos.get(liquidado.productoid ?? 0) ?? "Producto",
+        cantidad: liquidado.cantidad,
+        importe: liquidado.importe,
+      })),
     };
   }, { maxWait: 10_000, timeout: 30_000 });
 }

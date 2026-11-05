@@ -13,6 +13,7 @@ export default function FormularioCobro({ clienteid }: { clienteid: number }) {
   const [pendiente, setPendiente] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [mensaje, setMensaje] = useState<string | null>(null);
+  const [cobranzaid, setCobranzaid] = useState<number | null>(null);
 
   async function cobrar(evento: FormEvent<HTMLFormElement>) {
     evento.preventDefault();
@@ -20,6 +21,7 @@ export default function FormularioCobro({ clienteid }: { clienteid: number }) {
     const formulario = evento.currentTarget;
     const datos = crearCobranzaSchema.safeParse({ clienteid, monto: new FormData(formulario).get("monto") });
     setMensaje(null);
+    setCobranzaid(null);
     setError(null);
     if (!datos.success) {
       setError(datos.error.issues.map((issue) => issue.message).join(" "));
@@ -32,6 +34,7 @@ export default function FormularioCobro({ clienteid }: { clienteid: number }) {
       if (!respuesta.ok) throw new Error(respuesta.mensaje);
       formulario.reset();
       setMensaje("Cobro registrado correctamente.");
+      setCobranzaid(respuesta.cobranza.cobranzaid);
       router.refresh();
     } catch (fallo) {
       setError(fallo instanceof Error ? fallo.message : "No se pudo registrar el cobro.");
@@ -49,6 +52,11 @@ export default function FormularioCobro({ clienteid }: { clienteid: number }) {
       <Input id="monto-cobro" name="monto" type="number" min="0.01" step="0.01" required disabled={pendiente} aria-describedby={error ? "error-cobro" : undefined} />
       {error ? <p id="error-cobro" role="alert" className="text-sm text-destructive">{error}</p> : null}
       {mensaje ? <p role="status" className="text-sm">{mensaje}</p> : null}
+      {cobranzaid ? (
+        <Button asChild variant="outline" className="mr-2">
+          <a href={`/api/cobranza/${cobranzaid}/comprobante`} target="_blank" rel="noreferrer">Imprimir comprobante</a>
+        </Button>
+      ) : null}
       <Button type="submit" disabled={pendiente}>{pendiente ? "Registrando…" : "Registrar cobro"}</Button>
     </form>
   );
