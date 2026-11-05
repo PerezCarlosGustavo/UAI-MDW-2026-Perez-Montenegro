@@ -76,6 +76,7 @@ model producto {
   preciolista               Decimal                     @default(0) @db.Decimal(12, 2)
   permitestock              Boolean                     @default(true)
   stockactual               Decimal                     @default(0) @db.Decimal(12, 3)
+  stockminimo               Decimal?                    @db.Decimal(12, 3)
   activo                    Boolean                     @default(true)
   cuentacorrientemovimiento cuentacorrientemovimiento[]
   detalleventa              detalleventa[]

@@ -7,10 +7,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import SinDatos from "@/components/SinDatos";
 import { requerirUsuario } from "@/lib/auth";
 
-// Galería del sistema visual (clase 10): cada componente con todos sus
-// estados, con datos fijos. Sirve para ver un componente antes de usarlo,
-// para ver estados raros sin ensuciar la base y para que quien revisa un PR
-// chequee contraste y foco en un solo lugar. Está detrás de la sesión.
 
 export const dynamic = "force-dynamic";
 

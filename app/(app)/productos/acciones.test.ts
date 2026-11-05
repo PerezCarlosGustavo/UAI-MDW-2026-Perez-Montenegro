@@ -109,3 +109,27 @@ describe("editarProductoAction", () => {
     expect(vi.mocked(actualizarProducto).mock.calls[0]?.[1].stockactual).toBeUndefined();
   });
 });
+
+
+describe("stock mínimo en Server Actions", () => {
+  beforeEach(() => sesionDe("ADMIN"));
+
+  it("devuelve el error en su campo y conserva el mínimo inválido", async () => {
+    const estado = await crearProductoAction({}, formulario({ stockminimo: "-2" }));
+    expect(estado.errores?.stockminimo).toEqual(["El stock mínimo no puede ser negativo"]);
+    expect(estado.valores?.stockminimo).toBe("-2");
+    expect(crearProducto).not.toHaveBeenCalled();
+  });
+
+  it("guarda el mínimo al crear", async () => {
+    vi.mocked(crearProducto).mockResolvedValue({ id: 1n } as never);
+    await crearProductoAction({}, formulario({ stockminimo: "2.5" }));
+    expect(crearProducto).toHaveBeenCalledWith(expect.objectContaining({ stockminimo: 2.5 }));
+  });
+
+  it("actualiza el mínimo sin sobrescribir descuentos de ventas concurrentes", async () => {
+    vi.mocked(actualizarProducto).mockResolvedValue({ id: 1n } as never);
+    await editarProductoAction(1, 5, {}, formulario({ stockminimo: "3" }));
+    expect(actualizarProducto).toHaveBeenCalledWith(1n, expect.objectContaining({ stockminimo: 3, stockactual: undefined }));
+  });
+});

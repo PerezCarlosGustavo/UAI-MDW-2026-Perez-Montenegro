@@ -38,6 +38,7 @@ export default async function EditarProductoPage({ params }: Props) {
           codigobarra: producto.codigobarra ?? "",
           preciolista: String(producto.preciolista),
           stockactual: String(stock),
+          stockminimo: producto.stockminimo === null ? "" : String(producto.stockminimo),
           permitestock: producto.permitestock,
         }}
       />

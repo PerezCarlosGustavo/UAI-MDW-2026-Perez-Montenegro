@@ -27,12 +27,20 @@ const camposProductoSchema = z.object({
     .number({ invalid_type_error: "Ingresá un stock válido" })
     .nonnegative("El stock no puede ser negativo")
     .max(999_999_999.999, "El stock es demasiado alto"),
+  stockminimo: z.coerce
+    .number({ invalid_type_error: "Ingresá un stock mínimo válido" })
+    .finite("Ingresá un stock mínimo válido")
+    .nonnegative("El stock mínimo no puede ser negativo")
+    .max(999_999_999.999, "El stock mínimo es demasiado alto")
+    .multipleOf(0.001, "El stock mínimo admite hasta tres decimales")
+    .nullable(),
   activo: z.boolean(),
 });
 
 export const crearProductoSchema = camposProductoSchema.extend({
   permitestock: z.boolean().optional().default(true),
   stockactual: camposProductoSchema.shape.stockactual.optional().default(0),
+  stockminimo: camposProductoSchema.shape.stockminimo.optional().default(null),
   activo: z.boolean().optional().default(true),
 });
 
@@ -43,6 +51,7 @@ export const actualizarProductoSchema = camposProductoSchema.partial();
 // tocarlo no se manda (ver datosDeFormularioProducto).
 export const formularioProductoSchema = camposProductoSchema.omit({ activo: true }).extend({
   stockactual: camposProductoSchema.shape.stockactual.optional(),
+  stockminimo: camposProductoSchema.shape.stockminimo.optional().default(null),
 });
 
 // Un formulario manda texto; acá se pasa a la forma que espera el schema, sin
@@ -69,6 +78,7 @@ export function datosDeFormularioProducto(formData: FormData, stockAlAbrir?: num
     codigobarra: texto("codigobarra") || null,
     preciolista: texto("preciolista") || undefined,
     permitestock,
+    stockminimo: !permitestock ? null : texto("stockminimo") || null,
     // Sin control de stock el campo viene deshabilitado y el stock es 0.
     stockactual: !permitestock ? 0 : stockSinCambios ? undefined : stock,
   };

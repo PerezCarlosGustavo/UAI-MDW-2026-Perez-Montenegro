@@ -1,5 +1,6 @@
 "use client";
 
+
 import Link from "next/link";
 import { useState } from "react";
 import SinDatos from "@/components/SinDatos";
@@ -27,11 +28,11 @@ export default function BuscadorClientes({ clientes }: Props) {
             <li key={cliente.id} className="flex items-center justify-between gap-3 p-3">
               <span className="min-w-0 break-words font-medium">{cliente.nombre}</span>
               <div className="ml-auto flex shrink-0 gap-2" role="group" aria-label={"Acciones de " + cliente.nombre}>
-                <Button variant="outline" size="icon" disabled title="Editar (próximamente)" aria-label="Editar">
-                  <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m16 3 5 5M4 20l4-1L21 6a2 2 0 0 0-5-5L3 14l-1 7Z" /></svg>
+                <Button type="button" variant="outline" size="icon" disabled aria-label={"Editar " + cliente.nombre} title="Editar (próximamente)">
+                  <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m16 3 5 5M4 20l4-1L21 6a2 2 0 0 0-5-5L3 14l-1 7Z" /></svg>
                 </Button>
-                <Button variant="outline" size="icon" disabled title="Eliminar (próximamente)" aria-label="Eliminar">
-                  <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 6h18M9 6V4h6v2M5 6l1 14h12l1-14M10 10v6M14 10v6" /></svg>
+                <Button type="button" variant="outline" size="icon" disabled aria-label={"Eliminar " + cliente.nombre} title="Eliminar (próximamente)">
+                  <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18M9 6V4h6v2M5 6l1 14h12l1-14M10 10v6M14 10v6" /></svg>
                 </Button>
                 <Button asChild size="icon" variant="secondary" title="Mostrar deuda">
                   <Link href={"/clientes/" + cliente.id} aria-label={"Mostrar deuda de " + cliente.nombre}>

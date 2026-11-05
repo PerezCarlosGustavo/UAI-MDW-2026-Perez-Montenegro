@@ -39,6 +39,7 @@ function valoresEscritos(formData: FormData): EstadoProducto["valores"] {
     codigobarra: texto("codigobarra"),
     preciolista: texto("preciolista"),
     stockactual: texto("stockactual"),
+    stockminimo: texto("stockminimo"),
     permitestock: texto("permitestock"),
   };
 }
