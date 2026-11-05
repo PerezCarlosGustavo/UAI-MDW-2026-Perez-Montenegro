@@ -34,7 +34,8 @@ Lo que el sistema tiene que hacer está en [`docs/spec.md`](./docs/spec.md): ent
 npm run dev          # desarrollo
 npm run build        # build de producción
 npm run typecheck    # chequeo de tipos
-npm test         # tests
+npm test         # reglas y acciones (vitest)
+npm run test:e2e # flujo principal y permisos (Playwright, con base local en Docker)
 npx prisma migrate dev --name <nombre>
 ```
 
@@ -75,6 +76,15 @@ Después de tocar `prisma/schema.prisma`, siempre generar una migración. Nunca 
 - Los componentes son Server Components por defecto. `"use client"` solo si hay estado, efectos o eventos del navegador.
 - Un componente por archivo, en PascalCase. Los archivos de utilidades, en camelCase.
 - Los estados de carga y de error se resuelven siempre; no dejar la pantalla en blanco.
+
+### Pruebas
+- Las pruebas cambian cuando cambia la spec o el contrato, no cuando cambia el código. Nunca se arregla una prueba roja cambiando el valor esperado.
+- Las reglas de la sección 6 de la spec se prueban como funciones, con vitest, en un `*.test.ts` al lado del archivo.
+- El flujo principal (sección 5 de la spec) se prueba en `e2e/flujo-principal.spec.ts`, un `test.step` por paso. Si cambia el flujo, cambia la prueba en el mismo PR.
+- Cada rol de `docs/api.md` tiene su caso en `e2e/permisos.spec.ts`. Un endpoint nuevo entra con su fila, escrita mirando el contrato y no el código.
+- Las pruebas e2e buscan como una persona: `getByLabel`, `getByRole`, `getByText`. Nunca por clase de CSS ni por un id generado.
+- Las pruebas e2e nunca corren contra la base de producción: usan `.env.e2e` y `playwright.config.ts` no arranca si la base no es local.
+- No se agrega un "modo prueba" a la app (usuarios mágicos, `if (process.env.E2E)`): la sesión se fabrica afuera, con el secreto de prueba.
 
 ### Estilos
 - Solo Tailwind. Nada de CSS suelto ni estilos inline salvo valores calculados en runtime.
