@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import { subirPdf } from "@/lib/servicios/storageService";
-import { generarTicketVentaPdf } from "./generarTicketVenta";
+import { generarTicketVentaPdf, renderizarTicketVenta } from "./generarTicketVenta";
 
 vi.mock("@/lib/servicios/storageService", () => ({
   subirPdf: vi.fn().mockResolvedValue({}),
@@ -41,6 +41,17 @@ describe("generarTicketVentaPdf", () => {
     } finally {
       await fs.rm(dir, { recursive: true, force: true });
     }
+  });
+
+  it("sale en el ancho del rollo de 58 mm (spec, paso 8)", async () => {
+    const buffer = await renderizarTicketVenta({
+      ventaId: BigInt(123),
+      productos: [{ nombre: "Producto A", cantidad: 2, subtotal: 150 }],
+      total: 150,
+    });
+
+    const medida = buffer.toString("latin1").match(/\/MediaBox \[0 0 ([\d.]+) /);
+    expect(Number(medida?.[1])).toBeCloseTo((58 / 25.4) * 72, 1);
   });
 
   it("sube el PDF a storage cuando no recibe destino", async () => {
