@@ -37,10 +37,12 @@ const TODOS: [string, Pedido][] = [
   ["DELETE /api/clientes/:id", (api) => api.delete("/api/clientes/1")],
   ["GET /api/ventas", (api) => api.get("/api/ventas")],
   ["GET /api/ventas/:id", (api) => api.get("/api/ventas/1")],
+  ["GET /api/ventas/:id/comprobante", (api) => api.get("/api/ventas/1/comprobante")],
   ["GET /api/ventas/mias", (api) => api.get("/api/ventas/mias")],
   ["POST /api/ventas", (api) => api.post("/api/ventas", { data: VENTA })],
   ["GET /api/cuentacorriente/:clienteid", (api) => api.get("/api/cuentacorriente/1")],
   ["POST /api/cobranza", (api) => api.post("/api/cobranza", { data: COBRO })],
+  ["GET /api/cobranza/:id/comprobante", (api) => api.get("/api/cobranza/1/comprobante")],
   ["GET /api/usuarios", (api) => api.get("/api/usuarios")],
   ["PATCH /api/usuarios/:id", (api) => api.patch("/api/usuarios/1", { data: { rol: "VENDEDOR" } })],
 ];
@@ -133,6 +135,10 @@ test.describe("cada vendedor ve solo sus ventas", () => {
 
     test("recibe 404, igual que si no existiera", async ({ request }) => {
       expect((await request.get(`/api/ventas/${ventaId}`)).status()).toBe(404);
+    });
+
+    test("su comprobante también da 404", async ({ request }) => {
+      expect((await request.get(`/api/ventas/${ventaId}/comprobante`)).status()).toBe(404);
     });
 
     test("no la ve en su lista", async ({ request }) => {
