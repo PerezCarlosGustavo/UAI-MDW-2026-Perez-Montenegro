@@ -30,3 +30,56 @@ jobs:
 
       - name: Tests
         run: npm test
+
+  # El sistema entero en cada Pull Request: la app compilada, una base de verdad
+  # y un navegador. Corre aparte de `verificar`: si los tipos fallan, se sabe en
+  # un minuto, sin esperar a que compile y levante todo.
+  e2e:
+    runs-on: ubuntu-latest
+
+    # Una base que nace con el job y muere con él. Nunca la de producción.
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: almacen
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    # Pisan a las de `.env.e2e`, que apuntan al puerto del Docker local.
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/almacen
+      DIRECT_URL: postgresql://postgres:postgres@localhost:5432/almacen
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Instalar el navegador
+        run: npx playwright install --with-deps chromium
+
+      # Migraciones, seed, build y servidor: lo hace todo `npm run test:e2e`.
+      - name: Pruebas de punta a punta
+        run: npm run test:e2e
+
+      # Si algo falla queda el recorrido para descargar desde la pestaña del job.
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: recorrido-de-la-falla
+          path: test-results/
+          if-no-files-found: ignore
+          retention-days: 7
