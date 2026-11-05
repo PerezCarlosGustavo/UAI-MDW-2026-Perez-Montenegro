@@ -9,6 +9,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import BuscadorProductos from "@/components/BuscadorProductos";
+import Campo from "@/components/Campo";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -40,6 +41,10 @@ export default function FormularioVenta({ clientes }: Props) {
   // Solo para mostrar: el total que vale es el que calcula el servidor.
   const subtotal = (linea: Linea) => linea.preciolista * (Number(linea.cantidad) || 0);
   const total = lineas.reduce((suma, linea) => suma + subtotal(linea), 0);
+
+  // H4: se avisa antes de enviar. Es cortesía: la regla la sigue haciendo
+  // cumplir el servidor, que además rechaza a Consumidor Final.
+  const faltaCliente = tipopago === "1" && !clienteid;
 
   // Escanear dos veces el mismo producto suma uno, no agrega otra línea.
   function agregarProducto(producto: ProductoBuscado) {
@@ -147,18 +152,22 @@ export default function FormularioVenta({ clientes }: Props) {
       ) : null}
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <label className="grid gap-1.5 text-sm font-medium">
-          Cliente
-          <SelectNativo value={clienteid} onChange={(e) => setClienteid(e.target.value)}>
-            <option value="">Sin cliente</option>
-            {clientes.map((cliente) => (
-              <option key={cliente.id} value={String(cliente.id)}>
-                {cliente.nombre}
-              </option>
-            ))}
-          </SelectNativo>
-        </label>
-        <label className="grid gap-1.5 text-sm font-medium">
+        <Campo
+          etiqueta="Cliente"
+          errores={faltaCliente ? ["Para vender en cuenta corriente hay que elegir un cliente."] : undefined}
+        >
+          {(control) => (
+            <SelectNativo {...control} value={clienteid} onChange={(e) => setClienteid(e.target.value)}>
+              <option value="">Sin cliente</option>
+              {clientes.map((cliente) => (
+                <option key={cliente.id} value={String(cliente.id)}>
+                  {cliente.nombre}
+                </option>
+              ))}
+            </SelectNativo>
+          )}
+        </Campo>
+        <label className="grid gap-1.5 self-start text-sm font-medium">
           Tipo de pago
           <SelectNativo value={tipopago} onChange={(e) => setTipopago(e.target.value)}>
             <option value="0">Contado</option>
@@ -166,6 +175,15 @@ export default function FormularioVenta({ clientes }: Props) {
           </SelectNativo>
         </label>
       </div>
+
+      {faltaCliente ? (
+        <p className="text-sm text-muted-foreground">
+          ¿No está en la lista?{" "}
+          <Link href="/clientes/nuevo" className="font-medium text-primary underline-offset-4 hover:underline">
+            Crear un cliente
+          </Link>
+        </p>
+      ) : null}
 
       <BuscadorProductos onElegir={agregarProducto} />
 
@@ -196,6 +214,7 @@ export default function FormularioVenta({ clientes }: Props) {
                     value={linea.cantidad}
                     onChange={(e) => cambiarCantidad(linea.productoid, e.target.value)}
                     aria-label={`Cantidad de ${linea.nombre}`}
+                    aria-invalid={Number(linea.cantidad) > 0 ? undefined : true}
                     className="tabular-nums"
                   />
                 </label>
@@ -223,7 +242,7 @@ export default function FormularioVenta({ clientes }: Props) {
         <p className="text-sm text-muted-foreground">
           Los precios salen del catálogo y los confirma el servidor al registrar.
         </p>
-        <Button type="submit" disabled={guardando || lineas.length === 0}>
+        <Button type="submit" disabled={guardando || lineas.length === 0 || faltaCliente}>
           {guardando ? "Registrando…" : "Registrar venta"}
         </Button>
       </div>

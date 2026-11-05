@@ -125,14 +125,7 @@ El producto con `activo: false`.
 - 404 → Producto inexistente
 
 # 3. Categorías
-## GET /api/categorias
-Roles: ADMIN ✓ / VENDEDOR ✓
-
-## POST /api/categorias
-Roles: ADMIN ✓
-
-## PUT /api/categorias/:id
-Roles: ADMIN ✓
+No hay endpoints propios. Las categorías se cargan con el seed y el formulario de productos las lee desde `lib/db/categorias.ts`.
 
 # 4. Clientes
 ## GET /api/clientes
