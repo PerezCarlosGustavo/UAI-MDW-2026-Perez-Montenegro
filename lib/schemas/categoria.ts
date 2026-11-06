@@ -10,3 +10,7 @@ export const crearCategoriaSchema = z.object({
 });
 
 export type CrearCategoriaInput = z.infer<typeof crearCategoriaSchema>;
+
+export const listarCategoriasQuerySchema = z.object({
+  pagina: z.coerce.number().int().positive().max(10_000_000).catch(1),
+});

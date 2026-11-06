@@ -106,11 +106,15 @@ El recorrido completo, paso a paso, del flujo que da valor al sistema (no un ABM
 | Alta de cliente | `/clientes/nuevo` | ADMIN, VENDEDOR | Previo al 4 (H4) | Crea un cliente mediante Server Action | Hecha: formulario en pantalla propia |
 | Cuenta corriente del cliente | `/clientes/[id]` | ADMIN, VENDEDOR | 5 a 7 | Registra el cobro por Server Action y refresca la página | Hecha: lectura en servidor y `notFound()` si no existe |
 | Productos | `/productos` | ADMIN, VENDEDOR (solo lectura) | Previo al flujo (H2) | No | Hecha |
+| Categorías | `/categorias` | ADMIN | Previo al flujo | No | Listado paginado |
+| Alta de categoría | `/categorias/nueva` | ADMIN | Previo al flujo | Crea una categoría mediante Server Action | Hecha |
 | Alta y edición de producto | `/productos/nuevo`, `/productos/[id]/editar` | ADMIN | Previo al flujo (H2) | Crea y edita | Hecha |
 | Usuarios | `/usuarios` | ADMIN | Previo al flujo (H1) | Cambia rol y estado | Hecha |
 | Comprobante | `/api/ventas/[id]/comprobante`, `/api/cobranza/[id]/comprobante` | ADMIN, VENDEDOR | 8 | No | Hecha: PDF de 58mm que se abre desde la venta y al registrar el cobro. El cobro todavía no se puede reimprimir desde la pantalla |
 
 **Navegación de clientes.** El alta y la cuenta corriente se muestran en pantallas propias, sin modales. Agregar abre `/clientes/nuevo`; al guardar correctamente o cancelar se vuelve a `/clientes`. Mostrar deuda abre `/clientes/[id]`. Editar y Eliminar permanecen visibles y deshabilitados hasta su implementación.
+
+**Categorías.** El administrador consulta el listado paginado en `/categorias` y elige Agregar para abrir `/categorias/nueva`. El nombre es obligatorio y único; al guardar o cancelar se vuelve al listado. El formulario crea categorías activas. La creación también está disponible mediante `POST /api/categorias`, cuyo contrato se detalla en `docs/api.md`.
 
 **A dónde lleva cada formulario.** Después de registrar una venta se queda en `/ventas`, con un enlace a la venta creada: en el mostrador lo siguiente es atender a otro cliente. Después de guardar un producto vuelve a `/productos`, porque un producto no tiene una ficha propia.
 

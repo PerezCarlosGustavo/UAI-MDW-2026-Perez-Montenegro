@@ -18,6 +18,7 @@ import { SESION } from "./sesiones";
 
 // Bodies válidos: lo que tiene que fallar es el permiso, no la validación.
 const PRODUCTO = { nombre: "Intruso", categoriaid: 1, preciolista: 100 };
+const CATEGORIA = { nombre: "Intruso" };
 const CLIENTE = { nombre: "Intruso" };
 const VENTA = { tipopago: 0, detalles: [{ productoid: 1, cantidad: 1 }] };
 const COBRO = { clienteid: 1, monto: 100 };
@@ -27,6 +28,7 @@ type Pedido = (api: APIRequestContext) => Promise<APIResponse>;
 const TODOS: [string, Pedido][] = [
   ["GET /api/productos", (api) => api.get("/api/productos")],
   ["POST /api/productos", (api) => api.post("/api/productos", { data: PRODUCTO })],
+  ["POST /api/categorias", (api) => api.post("/api/categorias", { data: CATEGORIA })],
   ["GET /api/productos/:id", (api) => api.get("/api/productos/1")],
   ["PUT /api/productos/:id", (api) => api.put("/api/productos/1", { data: { preciolista: 1 } })],
   ["DELETE /api/productos/:id", (api) => api.delete("/api/productos/1")],
@@ -80,6 +82,7 @@ test.describe("VENDEDOR no administra: 403", () => {
 
   const soloAdmin = [
     "POST /api/productos",
+    "POST /api/categorias",
     "PUT /api/productos/:id",
     "DELETE /api/productos/:id",
     "PUT /api/clientes/:id",
@@ -104,6 +107,17 @@ test.describe("ADMIN no tiene ventas propias", () => {
 
   test("GET /api/ventas/mias: 403", async ({ request }) => {
     expect((await request.get("/api/ventas/mias")).status()).toBe(403);
+  });
+});
+
+test.describe("ADMIN administra categorías", () => {
+  test.use({ storageState: SESION.admin });
+
+  test("POST /api/categorias crea una categoría", async ({ request }) => {
+    const nombre = `Categoría e2e ${crypto.randomUUID()}`;
+    const respuesta = await request.post("/api/categorias", { data: { nombre } });
+    expect(respuesta.status()).toBe(201);
+    expect(await respuesta.json()).toMatchObject({ nombre, activa: true });
   });
 });
 
