@@ -24,6 +24,7 @@ type Props = {
     codigobarra: string;
     preciolista: string;
     stockactual: string;
+    stockminimo: string;
     permitestock: boolean;
   };
 };
@@ -115,6 +116,15 @@ export default function FormularioProducto({ accion, categorias, etiquetaGuardar
             defaultValue={valor("stockactual")}
             className="tabular-nums"
           />
+        )}
+      </Campo>
+
+      <Campo etiqueta="Stock mínimo (opcional)" errores={estado.errores?.stockminimo}
+        ayuda="Dejalo vacío para no configurar una alerta de stock bajo.">
+        {(control) => (
+          <Input {...control} name="stockminimo" type="number" inputMode="decimal"
+            min="0" step="0.001" disabled={!controlaStock}
+            defaultValue={valor("stockminimo")} className="tabular-nums" />
         )}
       </Campo>
 

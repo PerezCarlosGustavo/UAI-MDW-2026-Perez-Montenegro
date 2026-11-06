@@ -75,6 +75,7 @@ export async function crearProducto(datos: CrearProductoInput) {
       preciolista: datos.preciolista,
       permitestock: datos.permitestock,
       stockactual: datos.stockactual,
+      stockminimo: datos.stockminimo,
       activo: datos.activo ?? true,
     },
   });

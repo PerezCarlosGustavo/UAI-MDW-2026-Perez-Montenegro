@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { datosDeFormularioProducto, formularioProductoSchema } from "./producto";
+import { actualizarProductoSchema, crearProductoSchema, datosDeFormularioProducto, formularioProductoSchema } from "./producto";
 
 function formulario(campos: Record<string, string>) {
   const formData = new FormData();
@@ -59,4 +59,40 @@ describe("formularioProductoSchema", () => {
     expect(resultado.categoriaid).toEqual(["Elegí una categoría"]);
     expect(resultado.stockactual).toEqual(["El stock no puede ser negativo"]);
   });
+});
+
+
+describe("stock mínimo", () => {
+  it.each([-1, Infinity, NaN, 1000000000, 1.2345])("rechaza el mínimo inválido %s", (stockminimo) => {
+    expect(actualizarProductoSchema.safeParse({ stockminimo }).success).toBe(false);
+  });
+
+  it("acepta cero y cantidades con tres decimales", () => {
+    for (const stockminimo of [0, 5, 2.125]) {
+      expect(actualizarProductoSchema.parse({ stockminimo })).toEqual({ stockminimo });
+    }
+  });
+
+  it("crea sin mínimo si la API no lo informa y no lo modifica en una edición parcial", () => {
+    expect(crearProductoSchema.parse({ nombre: "Yerba", categoriaid: 2, preciolista: 100 }).stockminimo).toBeNull();
+    expect(actualizarProductoSchema.parse({ nombre: "Yerba" })).not.toHaveProperty("stockminimo");
+  });
+
+  it("ignora el mínimo enviado si el formulario no gestiona stock", () => {
+    const datos = datosDeFormularioProducto(formulario({ ...valido, permitestock: "", stockminimo: "20" }));
+    expect(formularioProductoSchema.parse(datos).stockminimo).toBeNull();
+  });
+
+  it("envía el mínimo sin pisar el stock actual sin cambios", () => {
+    const datos = datosDeFormularioProducto(formulario({ ...valido, stockminimo: "3.125" }), 10);
+    expect(formularioProductoSchema.parse(datos)).toMatchObject({ stockminimo: 3.125, stockactual: undefined });
+  });
+});
+
+
+it("permite quitar el stock mínimo y distingue null de cero", () => {
+  expect(actualizarProductoSchema.parse({ stockminimo: null }).stockminimo).toBeNull();
+  expect(actualizarProductoSchema.parse({ stockminimo: 0 }).stockminimo).toBe(0);
+  const datos = datosDeFormularioProducto(formulario({ ...valido, stockminimo: "" }));
+  expect(formularioProductoSchema.parse(datos).stockminimo).toBeNull();
 });

@@ -14,6 +14,7 @@ const datos = {
   preciolista: 2500,
   permitestock: true,
   stockactual: 0,
+  stockminimo: 0,
   activo: true,
 };
 

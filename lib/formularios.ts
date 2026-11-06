@@ -9,7 +9,7 @@ export type EstadoFormulario<Campo extends string = string> = {
   valores?: Partial<Record<Campo, string>>;
 };
 
-export type CampoProducto = "nombre" | "categoriaid" | "codigobarra" | "preciolista" | "stockactual" | "permitestock";
+export type CampoProducto = "nombre" | "categoriaid" | "codigobarra" | "preciolista" | "stockminimo" | "stockactual" | "permitestock";
 export type EstadoProducto = EstadoFormulario<CampoProducto>;
 
 export const SIN_ENVIAR: EstadoProducto = {};

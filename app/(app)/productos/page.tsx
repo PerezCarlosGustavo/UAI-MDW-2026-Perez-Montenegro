@@ -91,9 +91,10 @@ export default async function ProductosPage({ searchParams }: Props) {
             <tbody className="divide-y">
               {productos.map((producto) => {
                 const stock = Number(producto.stockactual);
+                const stockBajo = producto.permitestock && producto.stockminimo !== null && stock < Number(producto.stockminimo);
 
                 return (
-                  <tr key={String(producto.id)}>
+                  <tr key={String(producto.id)} className={stockBajo ? "bg-amber-50 dark:bg-amber-950/30" : undefined}>
                     <td className="py-3 pr-3">
                       <span className="block font-medium">{producto.nombre}</span>
                       <span className="text-xs text-muted-foreground">{producto.codigobarra ?? "Sin código"}</span>
@@ -103,6 +104,10 @@ export default async function ProductosPage({ searchParams }: Props) {
                     <td className="px-3 py-3 text-right tabular-nums">{formatearPesos(Number(producto.preciolista))}</td>
                     <td className="px-3 py-3 text-right tabular-nums">
                       {producto.permitestock ? stock : <span className="text-muted-foreground">No controla</span>}
+                      {producto.permitestock ? (
+                        <span className="ml-2 text-xs text-muted-foreground">Mínimo: {producto.stockminimo === null ? "Sin definir" : Number(producto.stockminimo)}</span>
+                      ) : null}
+                      {stockBajo ? <Badge variant="destructive" className="ml-2">Stock bajo</Badge> : null}
                       {/* Stock negativo: la venta se hizo igual y queda pendiente
                           el ajuste del administrador (ADR 0004). */}
                       {producto.permitestock && stock < 0 ? (
@@ -114,7 +119,7 @@ export default async function ProductosPage({ searchParams }: Props) {
                         <div className="flex justify-end gap-2">
                           <Button asChild variant="outline" size="sm">
                             <Link href={`/productos/${producto.id}/editar`} aria-label={`Editar ${producto.nombre}`}>
-                              Editar
+                              <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m16 3 5 5M4 20l4-1L21 6a2 2 0 0 0-5-5L3 14l-1 7Z" /></svg> Editar
                             </Link>
                           </Button>
                           <CambiarEstadoProducto

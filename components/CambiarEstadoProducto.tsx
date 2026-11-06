@@ -1,8 +1,5 @@
 "use client";
 
-// Un formulario que es solo un botón: es de cliente porque necesita acordarse
-// de si está guardando y de lo que contestó el servidor. Todo lo demás (qué
-// producto, darlo de baja o reactivarlo) lo fija la página en el servidor.
 
 import { useActionState } from "react";
 import { Button } from "@/components/ui/button";
@@ -19,19 +16,18 @@ export default function CambiarEstadoProducto({ accion, activo, nombre }: Props)
 
   return (
     <form action={enviar}>
-      <Button
-        type="submit"
-        variant="outline"
-        size="sm"
-        disabled={pendiente}
-        aria-label={`${activo ? "Dar de baja" : "Reactivar"} ${nombre}`}
-      >
-        {pendiente ? "Guardando…" : activo ? "Dar de baja" : "Reactivar"}
-      </Button>
+      {activo ? (
+        <Button type="submit" variant="outline" size="sm" disabled={pendiente} aria-label={"Dar de baja " + nombre}>
+          <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18M9 6V4h6v2M5 6l1 14h12l1-14M10 10v6M14 10v6" /></svg>
+          {pendiente ? "Guardando…" : "Dar de baja"}
+        </Button>
+      ) : (
+        <Button type="submit" variant="outline" size="sm" disabled={pendiente} aria-label={"Reactivar " + nombre}>
+          {pendiente ? "Guardando…" : "Reactivar"}
+        </Button>
+      )}
       {estado.mensaje ? (
-        <p role="alert" className="mt-1 text-sm text-destructive">
-          {estado.mensaje}
-        </p>
+        <p role="alert" className="mt-1 text-sm text-destructive">{estado.mensaje}</p>
       ) : null}
     </form>
   );
