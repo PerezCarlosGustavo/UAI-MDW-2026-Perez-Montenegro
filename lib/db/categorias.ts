@@ -5,7 +5,8 @@ export async function crearCategoria(datos: CrearCategoriaInput) {
   return prisma.categoria.create({ data: datos });
 }
 
-const LIMITE_CATEGORIAS = 10;
+const LIMITE_CATEGORIAS = 100;
+const CATEGORIAS_POR_PAGINA = 10;
 
 export async function listarCategorias() {
   return prisma.categoria.findMany({ orderBy: { nombre: "asc" }, take: LIMITE_CATEGORIAS });
@@ -13,10 +14,10 @@ export async function listarCategorias() {
 
 export async function listarCategoriasPaginadas(pagina: number) {
   const [categorias, total] = await Promise.all([
-    prisma.categoria.findMany({ orderBy: { nombre: "asc" }, skip: (pagina - 1) * LIMITE_CATEGORIAS, take: LIMITE_CATEGORIAS }),
+    prisma.categoria.findMany({ orderBy: { nombre: "asc" }, skip: (pagina - 1) * CATEGORIAS_POR_PAGINA, take: CATEGORIAS_POR_PAGINA }),
     prisma.categoria.count(),
   ]);
-  return { categorias, total, totalPaginas: Math.ceil(total / LIMITE_CATEGORIAS) };
+  return { categorias, total, totalPaginas: Math.ceil(total / CATEGORIAS_POR_PAGINA) };
 }
 
 export async function existeCategoria(id: bigint) {
