@@ -125,7 +125,38 @@ El producto con `activo: false`.
 - 404 → Producto inexistente
 
 # 3. Categorías
-No hay endpoints propios. Las categorías se cargan con el seed y el formulario de productos las lee desde `lib/db/categorias.ts`.
+
+## POST /api/categorias
+
+Crea una categoría. La pantalla web usa una Server Action; tanto esta como el endpoint validan con el mismo schema y guardan mediante `lib/db/categorias.ts`.
+
+### Roles
+
+- ADMIN: permitido.
+- VENDEDOR y PENDIENTE: 403.
+- Sin sesión: 401.
+
+### Body
+
+```json
+{ "nombre": "Bebidas", "activa": true }
+```
+
+`nombre` es obligatorio, se recortan sus espacios y admite hasta 100 caracteres. `activa` es opcional y por defecto vale `true`. El nombre debe ser único según la restricción de la base de datos.
+
+### Respuesta 201
+
+```json
+{ "id": 1, "nombre": "Bebidas", "activa": true }
+```
+
+### Errores
+
+- 400: JSON inválido o datos que no cumplen la validación.
+- 401: sin sesión.
+- 403: rol sin permiso.
+- 409: nombre duplicado.
+- 500: error inesperado.
 
 # 4. Clientes
 ## GET /api/clientes
@@ -416,6 +447,7 @@ El usuario actualizado (mismo formato que en la lista).
 |-----------|-------|----------|-------------|
 |GET /api/productos|✓|✓|✗|
 |POST /api/productos|✓|✗|✗|
+|POST /api/categorias|✓|✗|✗|
 |PUT /api/productos/:id|✓|✗|✗|
 |GET /api/productos/:id|✓|✓|✗|
 |DELETE /api/productos/:id|✓|✗|✗|
