@@ -19,12 +19,12 @@ export function formatearFechaHora(fecha: Date | string) {
   return formatoFechaHora.format(new Date(fecha));
 }
 
-/** Responde un PDF para abrir en el navegador. Son datos de una sesión: sin caché. */
+/** Responde un PDF descargable. Son datos de una sesión: sin caché. */
 export function responderPdf(pdf: Buffer, nombre: string) {
   return new Response(new Uint8Array(pdf), {
     headers: {
       "Content-Type": "application/pdf",
-      "Content-Disposition": `inline; filename="${nombre}"`,
+      "Content-Disposition": `attachment; filename="${nombre}"`,
       "Cache-Control": "private, no-store",
     },
   });

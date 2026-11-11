@@ -10,6 +10,7 @@
  * los valores esperados salen de la spec y del seed, no de correr el código.
  */
 import { expect, test } from "@playwright/test";
+import { readFile } from "node:fs/promises";
 import { SESION } from "./sesiones";
 
 // Del seed: 700 pesos. Las cuentas de abajo salen de las reglas de la sección 6.
@@ -115,12 +116,14 @@ test("se vende fiado y se cobra por FIFO, al precio del día y sin fraccionar", 
     await expect(page.getByText("Saldo a favor").first().locator("..")).toContainText("100,00");
   });
 
-  await test.step("8. el comprobante del cobro se abre en PDF para imprimir", async () => {
-    const direccion = await page.getByRole("link", { name: "Imprimir comprobante" }).getAttribute("href");
-
-    const respuesta = await page.request.get(direccion!);
-    expect(respuesta.status()).toBe(200);
-    expect(respuesta.headers()["content-type"]).toContain("application/pdf");
-    expect((await respuesta.body()).subarray(0, 4).toString()).toBe("%PDF");
+  await test.step("8. el comprobante del cobro se descarga en PDF para imprimir", async () => {
+    const [descarga] = await Promise.all([
+      page.waitForEvent("download"),
+      page.getByRole("button", { name: "Descargar comprobante" }).click(),
+    ]);
+    expect(descarga.suggestedFilename()).toMatch(/^comprobante-cobro-\d+\.pdf$/);
+    const ruta = await descarga.path();
+    expect(ruta).not.toBeNull();
+    expect((await readFile(ruta!)).subarray(0, 4).toString()).toBe("%PDF");
   });
 });

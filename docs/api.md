@@ -226,7 +226,7 @@ Una venta con su detalle.
 - VENDEDOR: solo las suyas. Una venta de otro vendedor responde **404**, igual que si no existiera (403 confirmaría que existe).
 
 ## GET /api/ventas/:id/comprobante
-El ticket de la venta en PDF (58 mm), para abrir e imprimir. Se genera al pedirlo, así que no depende de Supabase Storage.
+El ticket de la venta en PDF (58 mm), descargable para imprimir. Se genera al pedirlo, así que no depende de Supabase Storage. La respuesta incluye `Content-Disposition: attachment`.
 
 - ADMIN: cualquier venta.
 - VENDEDOR: solo las suyas. Una venta de otro vendedor responde **404**.
@@ -365,7 +365,7 @@ Liquida deuda por monto entregado.
 `cobranzaid` es el número del cobro: el id de su movimiento de pago. Con ese número se pide el comprobante.
 
 ## GET /api/cobranza/:id/comprobante
-El comprobante de liquidación en PDF (58 mm): cliente, monto recibido, productos liquidados y saldo a favor en ese momento. Se puede volver a pedir: no cambia aunque después haya otros cobros.
+El comprobante de liquidación en PDF (58 mm): cliente, monto recibido, productos liquidados y saldo a favor en ese momento. Se descarga mediante `Content-Disposition: attachment`. Se puede volver a pedir: no cambia aunque después haya otros cobros.
 
 ### Roles
 - ADMIN ✓
