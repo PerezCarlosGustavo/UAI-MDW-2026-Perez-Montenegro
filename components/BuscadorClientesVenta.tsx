@@ -69,7 +69,7 @@ export default function BuscadorClientesVenta({ cliente, onSeleccionar, error }:
           {resultados.map((resultado) => <li key={resultado.id}>
             <Button type="button" variant="ghost" className="h-auto w-full justify-start whitespace-normal text-left"
               onClick={() => { onSeleccionar(resultado); setResultados(null); setTexto(""); }}>
-              {resultado.nombre}
+              <span>{resultado.nombre}{resultado.documento ? ` · Documento: ${resultado.documento}` : ` · Sin documento (cliente #${resultado.id})`}</span>
             </Button>
           </li>)}
         </ul>

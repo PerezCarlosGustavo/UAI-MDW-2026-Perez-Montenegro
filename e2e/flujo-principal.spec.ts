@@ -9,7 +9,7 @@
  * Busca como una persona (`getByLabel`, `getByRole`), nunca por clase o id. Y
  * los valores esperados salen de la spec y del seed, no de correr el código.
  */
-import { expect, test } from "@playwright/test";
+import { expect, test, type Playwright } from "@playwright/test";
 import { SESION } from "./sesiones";
 
 // Del seed: 700 pesos. Las cuentas de abajo salen de las reglas de la sección 6.
@@ -17,6 +17,26 @@ const CODIGO = "7790036000565";
 const PRODUCTO = "JUGO PRONTO NARANJA X 200ML";
 
 test.use({ storageState: SESION.vendedor });
+
+// El test cambia el precio del producto. Cada intento debe empezar con el
+// precio del seed, incluso si un intento anterior falló después de modificarlo.
+async function restaurarPrecio(playwright: Playwright, baseURL: string | undefined) {
+  const admin = await playwright.request.newContext({ baseURL, storageState: SESION.admin });
+  try {
+    const busqueda = await admin.get(`/api/productos?q=${CODIGO}`);
+    expect(busqueda.status()).toBe(200);
+    const productos: { id: number; codigobarra: string | null }[] = await busqueda.json();
+    const producto = productos.find((item) => item.codigobarra === CODIGO);
+    expect(producto).toBeDefined();
+    const respuesta = await admin.put(`/api/productos/${producto!.id}`, { data: { preciolista: 700 } });
+    expect(respuesta.status()).toBe(200);
+  } finally {
+    await admin.dispose();
+  }
+}
+
+test.beforeEach(async ({ playwright, baseURL }) => restaurarPrecio(playwright, baseURL));
+test.afterEach(async ({ playwright, baseURL }) => restaurarPrecio(playwright, baseURL));
 
 test("se vende fiado y se cobra por FIFO, al precio del día y sin fraccionar", async ({ page, playwright, baseURL }) => {
   test.setTimeout(120_000);
@@ -123,6 +143,7 @@ test("se vende fiado y se cobra por FIFO, al precio del día y sin fraccionar", 
     await page.getByLabel("Monto recibido").fill("700");
     await page.getByRole("button", { name: "Registrar cobro" }).click();
 
+    await expect(page.getByRole("status")).toHaveText("Cobro registrado correctamente.");
     await expect(page.getByText("No hay productos pendientes")).toBeVisible();
     await expect(page.getByText("Deuda actual").locator("..")).toContainText("0,00");
     await expect(page.getByText("Saldo a favor").first().locator("..")).toContainText("100,00");

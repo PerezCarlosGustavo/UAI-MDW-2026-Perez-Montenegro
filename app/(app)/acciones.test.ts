@@ -73,7 +73,7 @@ describe("búsqueda de clientes para la venta", () => {
     expect((await buscarClientesParaVentaAction("  ")).ok).toBe(false);
     expect(db.buscarClientesParaVenta).not.toHaveBeenCalled();
     db.buscarClientesParaVenta.mockResolvedValue([{ id: 3n, nombre: "Consumidor Final", documento: "0" }]);
-    expect(await buscarClientesParaVentaAction(" Final ")).toEqual({ ok: true, clientes: [{ id: 3, nombre: "Consumidor Final", esConsumidorFinal: true }] });
+    expect(await buscarClientesParaVentaAction(" Final ")).toEqual({ ok: true, clientes: [{ id: 3, nombre: "Consumidor Final", documento: "0", esConsumidorFinal: true }] });
     expect(db.buscarClientesParaVenta).toHaveBeenCalledWith("Final");
   });
 });

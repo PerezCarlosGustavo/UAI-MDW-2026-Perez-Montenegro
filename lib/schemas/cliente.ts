@@ -51,7 +51,10 @@ export const clienteCreadoSchema = z.object({
 });
 
 export const buscarClienteParaVentaSchema = z.string().trim().min(1).max(150);
-export const clienteParaVentaSchema = clienteCreadoSchema.extend({ esConsumidorFinal: z.boolean() });
+export const clienteParaVentaSchema = clienteCreadoSchema.extend({
+  documento: z.string().nullable(),
+  esConsumidorFinal: z.boolean(),
+});
 export type ClienteSeleccionable = z.infer<typeof clienteParaVentaSchema>;
 
 export const errorClienteSchema = z.object({
