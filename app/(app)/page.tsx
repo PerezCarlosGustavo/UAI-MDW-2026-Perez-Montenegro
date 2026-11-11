@@ -28,9 +28,14 @@ export default async function Inicio() {
 
   const accesos = [
     {
-      href: "/ventas",
+      href: "/ventas/nueva",
       titulo: "Registrar una venta",
       descripcion: "Contado o cuenta corriente. El precio sale del catálogo.",
+    },
+    {
+      href: "/ventas",
+      titulo: "Ventas",
+      descripcion: "Consultar las ventas registradas.",
     },
     {
       href: "/productos",

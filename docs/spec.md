@@ -100,7 +100,8 @@ El recorrido completo, paso a paso, del flujo que da valor al sistema (no un ABM
 |---|---|---|---|---|---|
 | Ingreso | `/ingresar` | Público | 1 | No | Hecha |
 | Inicio | `/` | Todos | 1 | No | Hecha |
-| Punto de venta | `/ventas` | ADMIN, VENDEDOR | 2 a 4 | Registra la venta | Hecha, con búsqueda por código o nombre; falta el atajo de teclado del paso 3 |
+| Listado de ventas | `/ventas` | ADMIN, VENDEDOR (solo las suyas) | Consulta posterior al 4 | No | Listado de 10 ventas por página |
+| Punto de venta | `/ventas/nueva` | ADMIN, VENDEDOR | 2 a 4 | Registra la venta | Muestra las 3 ventas recientes; falta el atajo de teclado del paso 3 |
 | Detalle de venta | `/ventas/[id]` | ADMIN, VENDEDOR (solo las suyas) | Después del 4 | No | Hecha |
 | Clientes | `/clientes` | ADMIN, VENDEDOR | 5 | No | Hecha: listado en servidor y buscador interactivo. Agregar navega al alta; Mostrar deuda navega al detalle |
 | Alta de cliente | `/clientes/nuevo` | ADMIN, VENDEDOR | Previo al 4 (H4) | Crea un cliente mediante Server Action | Hecha: formulario en pantalla propia |
@@ -116,7 +117,9 @@ El recorrido completo, paso a paso, del flujo que da valor al sistema (no un ABM
 
 **Categorías.** El administrador consulta el listado paginado en `/categorias` y elige Agregar para abrir `/categorias/nueva`. El nombre es obligatorio y único; al guardar o cancelar se vuelve al listado. El formulario crea categorías activas. La creación también está disponible mediante `POST /api/categorias`, cuyo contrato se detalla en `docs/api.md`.
 
-**A dónde lleva cada formulario.** Después de registrar una venta se queda en `/ventas`, con un enlace a la venta creada: en el mostrador lo siguiente es atender a otro cliente. Después de guardar un producto vuelve a `/productos`, porque un producto no tiene una ficha propia.
+**A dónde lleva cada formulario.** Después de registrar una venta se queda en `/ventas/nueva`, con un enlace a la venta creada: en el mostrador lo siguiente es atender a otro cliente. Después de guardar un producto vuelve a `/productos`, porque un producto no tiene una ficha propia.
+
+**Cliente en el punto de venta.** El vendedor busca clientes activos por nombre o documento y selecciona uno de los resultados. Para cuenta corriente es obligatorio seleccionar un cliente distinto de Consumidor Final. Las ventas recientes se cargan independientemente del formulario.
 
 ## 6. Reglas de negocio
 
@@ -162,7 +165,7 @@ ejemplos por los de su dominio: lo que importa es que se pueda verificar, no que
 - **Eficiencia:** La carga y cobro de una venta al contado de 3 productos se realiza en 4 interacciones o menos (3 escaneos + 1 tecla de cobro F2).
 - **Errores:** Si falta un campo obligatorio al dar de alta un producto o cliente, el sistema resalta el campo con error mediante la validación de Zod y no borra los datos ya completados en el formulario.
 - **Aprendizaje:** Un vendedor nuevo puede buscar un producto, agregarlo al carrito y realizar una venta al contado en menos de 2 minutos sin requerir explicación.
-- **Recuerdo:** La pantalla del Punto de Venta (POS) está a un solo clic desde el menú lateral y siempre accesible mediante el botón principal del header.
+- **Recuerdo:** La pantalla del Punto de Venta (POS) está a un solo clic desde el acceso «Registrar una venta» del inicio.
 - **Satisfacción:** Se prueba la interfaz con el dueño de un comercio de barrio antes del Demo Day obteniendo la validación operativa.
 
 ### Accesibilidad

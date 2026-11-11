@@ -37,7 +37,11 @@ export async function buscarProductosParaVender(q: string, limite: number = LIMI
 }
 
 export async function hayProductosParaVender() {
-  return (await prisma.producto.count({ where: { activo: true } })) > 0;
+  const producto = await prisma.producto.findFirst({
+    where: { activo: true },
+    select: { id: true },
+  });
+  return producto !== null;
 }
 
 /** Una página del catálogo. Las bajas solo las ve quien las puede revertir. */

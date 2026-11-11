@@ -19,6 +19,19 @@ export async function listarClientes(
   });
 }
 
+/** Búsqueda limitada para el selector de clientes de una venta. */
+export async function buscarClientesParaVenta(texto: string) {
+  return prisma.cliente.findMany({
+    where: { activo: true, OR: [
+      { nombre: { contains: texto, mode: "insensitive" } },
+      { documento: { contains: texto, mode: "insensitive" } },
+    ] },
+    orderBy: [{ nombre: "asc" }, { id: "asc" }],
+    select: { id: true, nombre: true, documento: true },
+    take: 20,
+  });
+}
+
 /** Un cliente por id (activo o no). `null` → 404. */
 export async function obtenerCliente(id: bigint) {
   return prisma.cliente.findUnique({ where: { id } });

@@ -16,6 +16,7 @@ export async function registrarVentaAction(entrada: unknown) {
       return { ok: false as const, mensaje: resultado.errores.join(" ") };
     }
     revalidatePath("/ventas");
+    revalidatePath("/ventas/nueva");
     revalidatePath("/productos");
     revalidatePath("/clientes");
     return { ok: true as const, ventaId: Number(resultado.venta.id), advertencias: resultado.advertencias };

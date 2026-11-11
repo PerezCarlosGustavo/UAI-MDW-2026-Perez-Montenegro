@@ -39,6 +39,29 @@ export async function listarVentasVisiblesPara(usuario: UsuarioSesion, pagina: n
   });
 }
 
+const CAMPOS_RESUMEN_VENTA = {
+  id: true,
+  fecha: true,
+  tipopago: true,
+  total: true,
+  cliente: { select: { nombre: true } },
+} as const;
+
+/** Resúmenes para las pantallas, sin cargar los detalles de cada venta. */
+export async function listarResumenesVenta(usuario: UsuarioSesion, pagina: number, limite: number) {
+  return prisma.venta.findMany({
+    where: filtroVentasVisiblesPara(usuario),
+    orderBy: [{ fecha: "desc" }, { id: "desc" }],
+    take: limite,
+    skip: (pagina - 1) * limite,
+    select: CAMPOS_RESUMEN_VENTA,
+  });
+}
+
+export async function contarVentasVisiblesPara(usuario: UsuarioSesion) {
+  return prisma.venta.count({ where: filtroVentasVisiblesPara(usuario) });
+}
+
 /** Una venta, solo si este usuario puede verla. `null` → 404. */
 export async function obtenerVentaVisiblePara(id: bigint, usuario: UsuarioSesion) {
   return prisma.venta.findFirst({

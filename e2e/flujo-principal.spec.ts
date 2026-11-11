@@ -33,8 +33,10 @@ test("se vende fiado y se cobra por FIFO, al precio del día y sin fraccionar", 
   });
 
   await test.step("1. el vendedor entra al punto de venta", async () => {
-    await page.goto("/ventas");
-    await expect(page.getByRole("heading", { name: "Ventas", exact: true })).toBeVisible();
+    await page.goto("/");
+    await page.getByRole("main").getByRole("link", { name: /Registrar una venta/ }).click();
+    await expect(page).toHaveURL(/\/ventas\/nueva$/);
+    await expect(page.getByRole("heading", { name: "Nueva venta", exact: true }).first()).toBeVisible();
     await expect(page.getByRole("banner").getByText("Vendedor", { exact: true })).toBeVisible();
   });
 
@@ -59,20 +61,31 @@ test("se vende fiado y se cobra por FIFO, al precio del día y sin fraccionar", 
     await expect(page.getByRole("button", { name: "Registrar venta" })).toBeDisabled();
   });
 
-  await test.step("3. Consumidor Final tampoco puede fiar: lo rechaza el servidor (H4)", async () => {
-    await page.getByLabel("Cliente").selectOption({ label: "Consumidor Final" });
-    await page.getByRole("button", { name: "Registrar venta" }).click();
-
-    await expect(page.getByRole("alert").filter({ hasText: "tiene que elegir un cliente" })).toBeVisible();
-    // El rechazo no le vacía la venta al vendedor.
+  await test.step("3. Consumidor Final tampoco puede fiar (H4)", async () => {
+    await page.getByLabel("Cliente").fill("Consumidor Final");
+    await page.getByRole("list", { name: "Resultados de clientes" }).getByRole("button", { name: "Consumidor Final" }).click();
+    await expect(page.getByLabel("Cliente")).toHaveAttribute("aria-invalid", "true");
+    await expect(page.getByRole("button", { name: "Registrar venta" })).toBeDisabled();
     await expect(page.getByLabel(`Cantidad de ${PRODUCTO}`)).toHaveValue("2");
   });
 
   await test.step("4. con un cliente real, la venta se registra", async () => {
-    await page.getByLabel("Cliente").selectOption({ label: cliente });
+    await page.getByLabel("Cliente").fill(cliente);
+    await page.getByRole("list", { name: "Resultados de clientes" }).getByRole("button", { name: cliente }).click();
     await page.getByRole("button", { name: "Registrar venta" }).click();
 
     await expect(page.getByText("Venta registrada")).toBeVisible();
+    const recientes = page.getByRole("complementary").getByRole("listitem");
+    await expect(recientes.first()).toBeVisible();
+    expect(await recientes.count()).toBeLessThanOrEqual(3);
+  });
+
+  await test.step("4. consulta el listado separado de ventas", async () => {
+    await page.getByRole("link", { name: "Ver todas las ventas" }).click();
+    await expect(page).toHaveURL(/\/ventas$/);
+    await expect(page.getByRole("heading", { name: "Ventas", exact: true })).toBeVisible();
+    await expect(page.getByRole("list", { name: "Listado de ventas" }).getByRole("listitem")).not.toHaveCount(0);
+    expect(await page.getByRole("list", { name: "Listado de ventas" }).getByRole("listitem").count()).toBeLessThanOrEqual(10);
   });
 
   await test.step("5 y 6. días después, abre la cuenta del cliente: debe las unidades", async () => {
