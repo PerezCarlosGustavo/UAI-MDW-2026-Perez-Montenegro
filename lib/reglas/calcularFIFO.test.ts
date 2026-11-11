@@ -17,6 +17,18 @@ const pendiente = (overrides: Partial<Parameters<typeof calcularFIFO>[0][number]
 });
 
 describe("calcularFIFO", () => {
+  it("conserva el saldo del primer pago y cancela la deuda en el segundo", () => {
+    const deuda = pendiente({ cantidad: 2, preciounitario: 800 });
+    const primerPago = calcularFIFO([deuda], 1000);
+
+    expect(primerPago.pagados).toEqual([]);
+    expect(primerPago.saldoAFavor).toBe(1000);
+
+    const segundoPago = calcularFIFO([deuda], 700, primerPago.saldoAFavor);
+    expect(segundoPago.pagados).toEqual([expect.objectContaining({ cantidad: 2, importe: 1600 })]);
+    expect(segundoPago.saldoAFavorUsado).toBe(1000);
+    expect(segundoPago.saldoAFavor).toBe(100);
+  });
   it("no fracciona y guarda como crédito el monto que no completa el producto", () => {
     const resultado = calcularFIFO([pendiente()], 60);
     expect(resultado.pagados).toEqual([]);

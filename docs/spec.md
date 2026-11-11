@@ -77,7 +77,7 @@ Criterios de aceptación:
 **Como** *vendedor*, **quiero** imprimir el ticket PDF de la venta o del cobro, **para** entregar constancia de la operación realizada.
 
 Criterios de aceptación:
-- [ ] Dado que se finaliza una venta o un cobro, cuando el vendedor elige imprimir el comprobante, el sistema abre el PDF en formato térmico de 58mm.
+- [ ] Dado que se finaliza una venta o un cobro, cuando el vendedor elige descargar el comprobante, el sistema descarga el PDF en formato térmico de 58mm para poder imprimirlo.
 - [ ] Caso de error: cuando falla el servicio de almacenamiento externo (Supabase Storage), la venta no se revierte y el comprobante se puede imprimir igual, porque el PDF se genera al pedirlo.
 
 
@@ -110,7 +110,7 @@ El recorrido completo, paso a paso, del flujo que da valor al sistema (no un ABM
 | Alta de categoría | `/categorias/nueva` | ADMIN | Previo al flujo | Crea una categoría mediante Server Action | Hecha |
 | Alta y edición de producto | `/productos/nuevo`, `/productos/[id]/editar` | ADMIN | Previo al flujo (H2) | Crea y edita | Hecha |
 | Usuarios | `/usuarios` | ADMIN | Previo al flujo (H1) | Cambia rol y estado | Hecha |
-| Comprobante | `/api/ventas/[id]/comprobante`, `/api/cobranza/[id]/comprobante` | ADMIN, VENDEDOR | 8 | No | Hecha: PDF de 58mm que se abre desde la venta y al registrar el cobro. El cobro todavía no se puede reimprimir desde la pantalla |
+| Comprobante | `/api/ventas/[id]/comprobante`, `/api/cobranza/[id]/comprobante` | ADMIN, VENDEDOR | 8 | No | Hecha: PDF de 58mm descargable desde la venta y al registrar el cobro. El cobro todavía no se puede reimprimir desde la pantalla |
 
 **Navegación de clientes.** El alta y la cuenta corriente se muestran en pantallas propias, sin modales. Agregar abre `/clientes/nuevo`; al guardar correctamente o cancelar se vuelve a `/clientes`. Mostrar deuda abre `/clientes/[id]`. Editar y Eliminar permanecen visibles y deshabilitados hasta su implementación.
 
