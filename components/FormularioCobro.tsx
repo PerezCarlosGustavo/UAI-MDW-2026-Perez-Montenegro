@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { crearCobranzaSchema } from "@/lib/schemas/cuentacorriente";
 import { registrarCobranzaAction } from "@/app/(app)/clientes/acciones";
+import DescargarComprobante from "@/components/DescargarComprobante";
 
 export default function FormularioCobro({ clienteid }: { clienteid: number }) {
   const router = useRouter();
@@ -53,9 +54,7 @@ export default function FormularioCobro({ clienteid }: { clienteid: number }) {
       {error ? <p id="error-cobro" role="alert" className="text-sm text-destructive">{error}</p> : null}
       {mensaje ? <p role="status" className="text-sm">{mensaje}</p> : null}
       {cobranzaid ? (
-        <Button asChild variant="outline" className="mr-2">
-          <a href={`/api/cobranza/${cobranzaid}/comprobante`} target="_blank" rel="noreferrer">Imprimir comprobante</a>
-        </Button>
+        <DescargarComprobante className="mr-2" url={`/api/cobranza/${cobranzaid}/comprobante`} nombre={`comprobante-cobro-${cobranzaid}.pdf`} />
       ) : null}
       <Button type="submit" disabled={pendiente}>{pendiente ? "Registrando…" : "Registrar cobro"}</Button>
     </form>

@@ -5,6 +5,12 @@ const nextConfig: NextConfig = {
   // que esté corriendo (playwright.config.ts).
   distDir: process.env.NEXT_DIST_DIR || ".next",
 
+  // PDFKit carga estas fuentes dinámicamente y Next no las detecta al trazar
+  // dependencias. Se necesitan en endpoints y Server Actions que generan PDF.
+  outputFileTracingIncludes: {
+    "/*": ["./node_modules/pdfkit/js/standard-fonts/**/*"],
+  },
+
   // El build falla si hay errores de tipos o de lint. Es a propósito:
   // preferimos enterarnos en el Pull Request y no en producción.
   typescript: { ignoreBuildErrors: false },

@@ -8,6 +8,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import BuscadorProductos from "@/components/BuscadorProductos";
+import DescargarComprobante from "@/components/DescargarComprobante";
 import Campo from "@/components/Campo";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -134,14 +135,7 @@ export default function FormularioVenta() {
               Ver la venta #{resultado.ventaId}
             </Link>
             {" · "}
-            <a
-              href={`/api/ventas/${resultado.ventaId}/comprobante`}
-              target="_blank"
-              rel="noreferrer"
-              className="font-medium text-primary underline-offset-4 hover:underline"
-            >
-              Imprimir comprobante
-            </a>
+            <DescargarComprobante url={`/api/ventas/${resultado.ventaId}/comprobante`} nombre={`ticket-venta-${resultado.ventaId}.pdf`} />
             {/* Stock negativo: la venta se hizo igual (ADR 0004), pero se
                 avisa para que el administrador ajuste el inventario. */}
             {resultado.advertencias.length > 0 ? (
