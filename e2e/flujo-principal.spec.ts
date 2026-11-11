@@ -9,39 +9,40 @@
  * Busca como una persona (`getByLabel`, `getByRole`), nunca por clase o id. Y
  * los valores esperados salen de la spec y del seed, no de correr el código.
  */
-import { expect, test, type Playwright } from "@playwright/test";
+import { expect, test } from "@playwright/test";
+import { crearProductoSchema, productoBuscadoSchema } from "../lib/schemas/producto";
 import { SESION } from "./sesiones";
 
-// Del seed: 700 pesos. Las cuentas de abajo salen de las reglas de la sección 6.
-const CODIGO = "7790036000565";
-const PRODUCTO = "JUGO PRONTO NARANJA X 200ML";
-
 test.use({ storageState: SESION.vendedor });
-
-// El test cambia el precio del producto. Cada intento debe empezar con el
-// precio del seed, incluso si un intento anterior falló después de modificarlo.
-async function restaurarPrecio(playwright: Playwright, baseURL: string | undefined) {
-  const admin = await playwright.request.newContext({ baseURL, storageState: SESION.admin });
-  try {
-    const busqueda = await admin.get(`/api/productos?q=${CODIGO}`);
-    expect(busqueda.status()).toBe(200);
-    const productos: { id: number; codigobarra: string | null }[] = await busqueda.json();
-    const producto = productos.find((item) => item.codigobarra === CODIGO);
-    expect(producto).toBeDefined();
-    const respuesta = await admin.put(`/api/productos/${producto!.id}`, { data: { preciolista: 700 } });
-    expect(respuesta.status()).toBe(200);
-  } finally {
-    await admin.dispose();
-  }
-}
-
-test.beforeEach(async ({ playwright, baseURL }) => restaurarPrecio(playwright, baseURL));
-test.afterEach(async ({ playwright, baseURL }) => restaurarPrecio(playwright, baseURL));
 
 test("se vende fiado y se cobra por FIFO, al precio del día y sin fraccionar", async ({ page, playwright, baseURL }) => {
   test.setTimeout(120_000);
 
   const cliente = `Cliente E2E ${Date.now()}`;
+  const CODIGO = `E2E-${crypto.randomUUID()}`;
+  const PRODUCTO = `JUGO PRONTO NARANJA E2E ${crypto.randomUUID()}`;
+  const productoid = await test.step("preparación: producto propio con precio inicial de 700 pesos", async () => {
+    // Cada intento modifica su propio producto y no altera el seed compartido.
+    const admin = await playwright.request.newContext({ baseURL, storageState: SESION.admin });
+    try {
+      const listado = await admin.get("/api/productos");
+      expect(listado.status()).toBe(200);
+      const [referencia] = crearProductoSchema.pick({ categoriaid: true }).array().parse(await listado.json());
+      expect(referencia).toBeDefined();
+      const creado = await admin.post("/api/productos", { data: {
+        nombre: PRODUCTO,
+        codigobarra: CODIGO,
+        categoriaid: referencia!.categoriaid,
+        preciolista: 700,
+        permitestock: true,
+        stockactual: 10,
+      } });
+      expect(creado.status()).toBe(201);
+      return productoBuscadoSchema.parse(await creado.json()).id;
+    } finally {
+      await admin.dispose();
+    }
+  });
 
   await test.step("antes del paso 4: se da de alta el cliente (H4)", async () => {
     await page.goto("/clientes/nuevo");
@@ -119,11 +120,12 @@ test("se vende fiado y se cobra por FIFO, al precio del día y sin fraccionar", 
 
   await test.step("7. la deuda se revaloriza: si sube el precio, sube lo que debe", async () => {
     const admin = await playwright.request.newContext({ baseURL, storageState: SESION.admin });
-    const [producto] = await (await admin.get(`/api/productos?q=${CODIGO}`)).json();
-
-    const respuesta = await admin.put(`/api/productos/${producto.id}`, { data: { preciolista: 800 } });
-    expect(respuesta.status()).toBe(200);
-    await admin.dispose();
+    try {
+      const respuesta = await admin.put(`/api/productos/${productoid}`, { data: { preciolista: 800 } });
+      expect(respuesta.status()).toBe(200);
+    } finally {
+      await admin.dispose();
+    }
 
     await page.reload();
     await expect(page.getByText("Deuda actual").locator("..")).toContainText("1.600,00");
@@ -134,6 +136,8 @@ test("se vende fiado y se cobra por FIFO, al precio del día y sin fraccionar", 
     await page.getByRole("button", { name: "Registrar cobro" }).click();
 
     await expect(page.getByText("Cobro registrado correctamente.")).toBeVisible();
+    await expect(page.getByLabel("Monto recibido")).toHaveValue("");
+    await expect(page.getByRole("button", { name: "Registrar cobro", exact: true })).toBeEnabled();
     await expect(page.getByText("Saldo a favor").first().locator("..")).toContainText("1.000,00");
     await expect(page.getByText("Deuda actual").locator("..")).toContainText("1.600,00");
     await expect(page.getByRole("cell", { name: PRODUCTO })).toBeVisible();
@@ -143,7 +147,9 @@ test("se vende fiado y se cobra por FIFO, al precio del día y sin fraccionar", 
     await page.getByLabel("Monto recibido").fill("700");
     await page.getByRole("button", { name: "Registrar cobro" }).click();
 
-    await expect(page.getByRole("status")).toHaveText("Cobro registrado correctamente.");
+    await expect(page.getByLabel("Monto recibido")).toHaveValue("");
+    await expect(page.getByRole("button", { name: "Registrar cobro", exact: true })).toBeEnabled();
+    await expect(page.getByText("Cobro registrado correctamente.")).toBeVisible();
     await expect(page.getByText("No hay productos pendientes")).toBeVisible();
     await expect(page.getByText("Deuda actual").locator("..")).toContainText("0,00");
     await expect(page.getByText("Saldo a favor").first().locator("..")).toContainText("100,00");
