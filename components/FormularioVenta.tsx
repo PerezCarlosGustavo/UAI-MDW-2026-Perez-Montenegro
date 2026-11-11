@@ -17,6 +17,7 @@ import type { ProductoBuscado } from "@/lib/schemas/producto";
 import type { ClienteSeleccionable } from "@/lib/schemas/cliente";
 import { formatearPesos } from "@/lib/utils";
 import { registrarVentaAction } from "@/app/(app)/ventas/acciones";
+import BuscadorClientesVenta from "./BuscadorClientesVenta";
 
 type Linea = { productoid: number; nombre: string; preciolista: number; cantidad: string };
 
