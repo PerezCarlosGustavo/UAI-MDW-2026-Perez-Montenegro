@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import DescargarComprobante from "@/components/DescargarComprobante";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { requerirUsuario } from "@/lib/auth";
 import { PERMISOS } from "@/lib/auth/permisos";
@@ -44,11 +44,7 @@ export default async function DetalleVenta({ params }: Props) {
         </Badge>
       </div>
 
-      <Button asChild variant="outline" className="mt-4">
-        <a href={`/api/ventas/${String(venta.id)}/comprobante`} target="_blank" rel="noreferrer">
-          Imprimir comprobante
-        </a>
-      </Button>
+      <DescargarComprobante className="mt-4 inline-block" url={`/api/ventas/${String(venta.id)}/comprobante`} nombre={`ticket-venta-${String(venta.id)}.pdf`} />
 
       <Card className="mt-6">
         <CardHeader>
