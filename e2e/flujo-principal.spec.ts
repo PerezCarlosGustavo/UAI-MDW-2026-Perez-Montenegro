@@ -10,6 +10,7 @@
  * los valores esperados salen de la spec y del seed, no de correr el código.
  */
 import { expect, test } from "@playwright/test";
+import { readFile } from "node:fs/promises";
 import { crearProductoSchema, productoBuscadoSchema } from "../lib/schemas/producto";
 import { SESION } from "./sesiones";
 
