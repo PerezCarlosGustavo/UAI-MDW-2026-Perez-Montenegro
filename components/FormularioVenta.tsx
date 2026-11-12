@@ -1,9 +1,8 @@
 "use client";
 
 // Client Component porque tiene estado (las líneas de la venta, si está
-// guardando, el resultado) y eventos. Los clientes NO los pide: se los pasa la
-// página, que los leyó en el servidor desde lib/db (clase 8). Los productos los
-// busca BuscadorProductos; la venta se registra mediante una Server Action.
+// guardando, el resultado) y eventos. Las búsquedas se hacen bajo demanda;
+// la venta se registra mediante una Server Action.
 
 import Link from "next/link";
 import { useState } from "react";
@@ -16,10 +15,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SelectNativo } from "@/components/ui/select-nativo";
 import type { ProductoBuscado } from "@/lib/schemas/producto";
+import type { ClienteSeleccionable } from "@/lib/schemas/cliente";
 import { formatearPesos } from "@/lib/utils";
 import { registrarVentaAction } from "@/app/(app)/ventas/acciones";
-
-export type ClienteSeleccionable = { id: number; nombre: string };
+import BuscadorClientesVenta from "./BuscadorClientesVenta";
 
 type Linea = { productoid: number; nombre: string; preciolista: number; cantidad: string };
 
@@ -27,13 +26,9 @@ type Resultado =
   | { tipo: "ok"; ventaId: number; advertencias: string[] }
   | { tipo: "error"; mensaje: string };
 
-type Props = {
-  clientes: ClienteSeleccionable[];
-};
-
-export default function FormularioVenta({ clientes }: Props) {
+export default function FormularioVenta() {
   const router = useRouter();
-  const [clienteid, setClienteid] = useState("");
+  const [cliente, setCliente] = useState<ClienteSeleccionable | null>(null);
   const [tipopago, setTipopago] = useState("0");
   const [lineas, setLineas] = useState<Linea[]>([]);
   const [guardando, setGuardando] = useState(false);
@@ -45,7 +40,7 @@ export default function FormularioVenta({ clientes }: Props) {
 
   // H4: se avisa antes de enviar. Es cortesía: la regla la sigue haciendo
   // cumplir el servidor, que además rechaza a Consumidor Final.
-  const faltaCliente = tipopago === "1" && !clienteid;
+  const faltaCliente = tipopago === "1" && (!cliente || cliente.esConsumidorFinal);
 
   // Escanear dos veces el mismo producto suma uno, no agrega otra línea.
   function agregarProducto(producto: ProductoBuscado) {
@@ -82,7 +77,7 @@ export default function FormularioVenta({ clientes }: Props) {
     try {
       // Solo qué y cuánto: precios y total los calcula el servidor.
       const respuesta = await registrarVentaAction({
-        clienteid: clienteid ? Number(clienteid) : null,
+        clienteid: cliente?.id ?? null,
         tipopago: Number(tipopago),
         detalles: lineas.map((linea) => ({
           productoid: linea.productoid,
@@ -100,7 +95,7 @@ export default function FormularioVenta({ clientes }: Props) {
         ventaId: respuesta.ventaId,
         advertencias: respuesta.advertencias,
       });
-      setClienteid("");
+      setCliente(null);
       setTipopago("0");
       setLineas([]);
       // Vuelve a pedirle la página al servidor: así "Ventas recientes" ya
@@ -155,21 +150,8 @@ export default function FormularioVenta({ clientes }: Props) {
       ) : null}
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <Campo
-          etiqueta="Cliente"
-          errores={faltaCliente ? ["Para vender en cuenta corriente hay que elegir un cliente."] : undefined}
-        >
-          {(control) => (
-            <SelectNativo {...control} value={clienteid} onChange={(e) => setClienteid(e.target.value)}>
-              <option value="">Sin cliente</option>
-              {clientes.map((cliente) => (
-                <option key={cliente.id} value={String(cliente.id)}>
-                  {cliente.nombre}
-                </option>
-              ))}
-            </SelectNativo>
-          )}
-        </Campo>
+        <BuscadorClientesVenta cliente={cliente} onSeleccionar={setCliente}
+          error={faltaCliente ? "Para vender en cuenta corriente elegí un cliente distinto de Consumidor Final." : undefined} />
         <label className="grid gap-1.5 self-start text-sm font-medium">
           Tipo de pago
           <SelectNativo value={tipopago} onChange={(e) => setTipopago(e.target.value)}>

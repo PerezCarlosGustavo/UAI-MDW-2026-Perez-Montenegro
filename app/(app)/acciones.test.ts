@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { revalidatePath } from "next/cache";
 import { crearClienteAction, registrarCobranzaAction } from "./clientes/acciones";
 import { registrarVentaAction } from "./ventas/acciones";
+import { buscarClientesParaVentaAction } from "./ventas/buscarClientes";
 import { POST as crearVentaApi } from "../api/ventas/route";
 import { actualizarUsuarioAction } from "./usuarios/acciones";
 
@@ -10,13 +11,14 @@ const db = vi.hoisted(() => ({
   crearCliente: vi.fn(), validarReglasCliente: vi.fn(), registrarCobranza: vi.fn(),
   buscarClienteParaVenta: vi.fn(), buscarProductosParaVenta: vi.fn(), registrarVenta: vi.fn(),
   actualizarUsuario: vi.fn(), generarTicketVentaPdf: vi.fn(),
+  buscarClientesParaVenta: vi.fn(),
 }));
 
 vi.mock("next-auth", () => ({ getServerSession: vi.fn() }));
 vi.mock("next-auth/providers/google", () => ({ default: vi.fn() }));
 vi.mock("@/lib/db/client", () => ({ prisma: {} }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
-vi.mock("@/lib/db/clientes", () => ({ crearCliente: db.crearCliente }));
+vi.mock("@/lib/db/clientes", () => ({ crearCliente: db.crearCliente, buscarClientesParaVenta: db.buscarClientesParaVenta }));
 vi.mock("@/lib/cliente/reglas", () => ({ validarReglasCliente: db.validarReglasCliente }));
 vi.mock("@/lib/db/cuentacorriente", () => ({ registrarCobranza: db.registrarCobranza }));
 vi.mock("@/lib/db/ventas", () => ({
@@ -36,6 +38,7 @@ const acciones = [
   ["alta de cliente", () => crearClienteAction({ nombre: "Ana" })],
   ["cobranza", () => registrarCobranzaAction({ clienteid: 7, monto: 100 })],
   ["venta", () => registrarVentaAction(venta)],
+  ["búsqueda de clientes", () => buscarClientesParaVentaAction("Ana")],
   ["usuario", () => actualizarUsuarioAction(7, { rol: "VENDEDOR" })],
 ] as const;
 
@@ -54,6 +57,7 @@ describe("autorización de Server Actions", () => {
     expect(db.crearCliente).not.toHaveBeenCalled();
     expect(db.registrarCobranza).not.toHaveBeenCalled();
     expect(db.registrarVenta).not.toHaveBeenCalled();
+    expect(db.buscarClientesParaVenta).not.toHaveBeenCalled();
     expect(db.actualizarUsuario).not.toHaveBeenCalled();
   });
 
@@ -61,6 +65,16 @@ describe("autorización de Server Actions", () => {
     sesion("VENDEDOR");
     expect((await actualizarUsuarioAction(7, { rol: "ADMIN" })).ok).toBe(false);
     expect(db.actualizarUsuario).not.toHaveBeenCalled();
+  });
+});
+
+describe("búsqueda de clientes para la venta", () => {
+  it("valida el texto y consulta solo cuando se busca", async () => {
+    expect((await buscarClientesParaVentaAction("  ")).ok).toBe(false);
+    expect(db.buscarClientesParaVenta).not.toHaveBeenCalled();
+    db.buscarClientesParaVenta.mockResolvedValue([{ id: 3n, nombre: "Consumidor Final", documento: "0" }]);
+    expect(await buscarClientesParaVentaAction(" Final ")).toEqual({ ok: true, clientes: [{ id: 3, nombre: "Consumidor Final", documento: "0", esConsumidorFinal: true }] });
+    expect(db.buscarClientesParaVenta).toHaveBeenCalledWith("Final");
   });
 });
 

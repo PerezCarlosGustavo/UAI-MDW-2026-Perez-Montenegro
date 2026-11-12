@@ -54,6 +54,22 @@ describe("calcularFIFO", () => {
     expect(resultado.pagados).toEqual([]);
     expect(resultado.saldoAFavor).toBe(50);
   });
+
+  it("acumula un primer pago y cancela el pendiente completo en el segundo", () => {
+    const deuda = pendiente({ cantidad: 2, preciounitario: 800 });
+    const primero = calcularFIFO([deuda], 1000);
+    expect(primero.pagados).toEqual([]);
+    expect(primero.saldoAFavor).toBe(1000);
+
+    const segundo = calcularFIFO([deuda], 700, primero.saldoAFavor);
+    expect(segundo.pagados).toMatchObject([{ cantidad: 2, importe: 1600 }]);
+    expect(segundo.saldoAFavorUsado).toBe(1000);
+    expect(segundo.saldoAFavor).toBe(100);
+    expect(reconstruirPendientes([
+      { id: 1, ventaid: 10, productoid: 2, tipo: TIPO_MOVIMIENTO_CC.DEUDA_VENTA, cantidad: 2, importe: 0, fecha },
+      { id: 2, ventaid: 10, productoid: 2, tipo: TIPO_MOVIMIENTO_CC.PRODUCTO_LIQUIDADO, cantidad: segundo.pagados[0]!.cantidad, importe: 1600, fecha },
+    ])).toEqual([]);
+  });
 });
 
 describe("reconstruirPendientes", () => {

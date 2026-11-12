@@ -83,14 +83,8 @@ model producto {
   categoria                 categoria                   @relation(fields: [categoriaid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_producto_categoria")
 
   @@index([categoriaid], map: "ix_producto_categoriaid")
+  @@index([nombre(ops: raw("gin_trgm_ops"))], type: Gin, map: "ix_producto_nombre_trgm")
 }
-
-// Enum y no String: con String la base acepta "admin", "Admin" o cualquier
-// cosa, y la comparación de roles en el código falla sin avisar.
-//
-// PENDIENTE es el rol con el que entra cualquiera que se loguea por primera
-// vez: no tiene ningún permiso hasta que un ADMIN le asigna otro rol. La URL
-// es pública, así que tener cuenta de Google no alcanza para operar.
 enum Rol {
   ADMIN
   VENDEDOR
